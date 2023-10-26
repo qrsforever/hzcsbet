@@ -74,10 +74,10 @@ class BaseOptions():
         opt, _ = parser.parse_known_args()
 
         # modify model-related parser options
-        # model_name = opt.model
-        # model_option_setter = models.get_option_setter(model_name)
-        # parser = model_option_setter(parser, self.isTrain)
-        # opt, _ = parser.parse_known_args()  # parse again with new defaults
+        model_name = opt.model
+        model_option_setter = models.get_option_setter(model_name)
+        parser = model_option_setter(parser, self.isTrain)
+        opt, _ = parser.parse_known_args()  # parse again with new defaults
 
         # modify dataset-related parser options
         dataset_name = opt.dataset_mode
