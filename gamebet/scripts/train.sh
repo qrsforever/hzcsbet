@@ -1,8 +1,9 @@
 #!/bin/bash
 
 CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
+TOP_DIR=$(cd ${CUR_DIR}/..; pwd)
 
-python ${CUR_DIR}/train.py --dataroot ${CUR_DIR}/datasets/soccer_seg_detection \
+python3 ${TOP_DIR}/train.py --dataroot ${TOP_DIR}/datasets/soccer_seg_detection \
     --gpu_ids -1 \
     --name soccer_seg_detection_pix2pix --model two_pix2pix --netG unet_256 \
     --direction AtoB --dataset_mode two_aligned \

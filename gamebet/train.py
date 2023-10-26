@@ -8,7 +8,16 @@
 # @date 2023-10-24 21:18
 
 from options.train_options import TrainOptions
-from data.two_aligned_dataset import TwoAlignedDataset
+from data import create_dataset
 
 
-opt = TrainOptions().parse()
+if __name__ == "__main__":
+    opt = TrainOptions().parse()
+    dataset = create_dataset(opt)
+    print('dataset size = %d' % len(dataset))
+
+    for i, data in enumerate(dataset):
+        print(i, data)
+        break
+
+

@@ -11,19 +11,18 @@ from data.aligned_dataset import AlignedDataset
 from data.base_dataset import BaseDataset
 
 class TwoAlignedDataset(BaseDataset):
-    def initialize(self, opt):
+    def __init__(self, opt):
+        BaseDataset.__init__(self, opt)
         assert opt.isTrain is True       
         opt1 = opt
         opt1.phase = opt.phase1
         opt1.dataset_model = 'aligned'        
-        self.dataset1 = AlignedDataset()
-        self.dataset1.initialize(opt1)
+        self.dataset1 = AlignedDataset(opt1)
 
         opt2 = opt
         opt2.phase = opt.phase2
         opt2.dataset_model = 'aligned'
-        self.dataset2 = AlignedDataset()
-        self.dataset2.initialize(opt2)
+        self.dataset2 = AlignedDataset(opt2)
 
     def __getitem__(self, index):        
         return {
