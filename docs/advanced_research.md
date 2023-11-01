@@ -66,7 +66,9 @@ flowchart TB
 - [Content-Aware Unsupervised Deep Homography Estimation (2020.7)][P-3]
 - [Event Detection in Football using Graph Convolutional Networks 2023][P-4]
 - [**Sports Camera Calibration via Synthetic Data (2018)**][P-5]
+- [**A Robust and Efficient Framework for Sports-Field Registration (2022.10) **][P-6]
 
+[P-6]: https://openaccess.thecvf.com/content/WACV2021/papers/Nie_A_Robust_and_Efficient_Framework_for_Sports-Field_Registration_WACV_2021_paper.pdf
 [P-5]: https://arxiv.org/pdf/1810.10658.pdf "https://github.com/lood339/pytorch-two-GAN"
 [P-4]: https://arxiv.org/pdf/2301.10052.pdf
 [P-1]: https://www.hindawi.com/journals/cin/2022/3540642/
@@ -85,7 +87,11 @@ flowchart TB
 - [Introducing Google Research Football: A Novel Reinforcement Learning Environment 2019.7][R-8]
 - [**Football Analysis (Under construction)**][R-9]
 - [**How To Obtain The Bird’s Eye View of a Soccer Game Regardless of Camera Angle Changes**][R-10]
+- [Enhanced AI models using synthetic data][R-11]
+- [Sports Field Registration ][R-12]
 
+[R-12]: https://github.com/ericsujw/KpSFR
+[R-11]: https://fluendo.com/en/blog/enhanced-ai-models-using-synthetic-data/
 [R-10]: https://medium.com/@amirhossein477/how-to-obtain-the-birds-eye-view-of-a-soccer-game-regardless-of-camera-angle-changes-90d627acd522
 [R-1]: https://github.com/jac99/FootAndBall/tree/master
 [R-2]: https://www.track160.com/post/how-ai-revolutionizes-football-video-analysis-for-the-sub-elite-level "简单介绍"
