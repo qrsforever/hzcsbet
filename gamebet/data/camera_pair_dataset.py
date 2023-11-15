@@ -8,6 +8,7 @@
 # @date 2023-11-13 20:10
 
 
+import torch
 import numpy as np
 import torchvision.transforms as transforms
 from torch.utils.data.dataset import Dataset
@@ -48,4 +49,6 @@ class CameraPairDataset(Dataset):
         ix1, ix2 = self.indices[index]
         x1 = self.data.anchor_images[ix1]
         x2 = self.data.anchor_images[ix2] if ix1 != ix2 else self.data.positive_images[ix2]
-        return self.transform(Image.fromarray(x1)), self.transform(Image.fromarray(x2)), float(ix1 == ix2)
+        return (self.transform(Image.fromarray(x1)), \
+                self.transform(Image.fromarray(x2)), \
+                torch.from_numpy(np.array([int(ix1 == ix2)], dtype=np.float32)))
