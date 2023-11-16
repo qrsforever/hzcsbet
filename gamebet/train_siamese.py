@@ -11,13 +11,14 @@
 import os
 import scipy.io as sio
 import argparse
+import numpy as np
 import torch
 import torch.optim as optim
 import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 
-# import torch.nn.functional as F
+import torch.nn.functional as F
 
 from data.camera_pair_dataset import CameraPair, CameraPairDataset 
 from models.siamese import ContrastiveLoss, SiameseNetwork
@@ -57,13 +58,14 @@ train_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num
 ## Loss
 
 learning_rate = args.lr
-criterion = ContrastiveLoss(margin=2.0)
+criterion = ContrastiveLoss(margin=1.0)
 
 ## Optimizer
 
-net = SiameseNetwork()
+siamese = SiameseNetwork()
 
-optimizer = optim.Adam(net, lr=learning_rate)
+# optimizer = optim.SGD(siamese.parameters(), lr=0.1, momentum=0.9)
+optimizer = optim.Adam(siamese.parameters(), lr=learning_rate)
 # scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20, 50, 100, 150], gamma=0.1)
 
@@ -73,38 +75,48 @@ epoch_beg = 0
 epoch_num = args.num_epoch
 if os.path.exists(model_resume_path):
     checkpoint = torch.load(model_resume_path, map_location=lambda storage, _: storage)
-    net.load_state_dict(checkpoint['model'])
+    siamese.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     epoch_beg = checkpoint['epoch']
 
 device = 'cpu'
 if torch.cuda.is_available():
     device = torch.device('cuda:{}'.format(args.cuda_id))
-    net = net.to(device)
+    siamese = siamese.to(device)
     criterion = criterion.cuda(device)
     cudnn.benchmark = True
 
-for epoch in range(epoch_beg, epoch_num):
-    net.train()
-    losses = []
-    for x1, x2, label in train_loader:
-        x1, x2, label = x1.to(device), x2.to(device), label.to(device)
-        feat1, feat2 = net(x1, x2)
-        loss = criterion(feat1, feat2, label)
+for epoch in range(epoch_beg, epoch_num + 1):
+    siamese.train()
+    losses, pos_dists, neg_dists = [], [], []
+    for bx1, bx2, labels in train_loader:
+        bx1, bx2, labels = bx1.to(device), bx2.to(device), labels.to(device)
+        feat1, feat2 = siamese(bx1, bx2)
+        loss = criterion(feat1, feat2, labels)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         losses.append(loss.item())
-        # dist = F.pairwise_distance(feat1, feat2, keepdim=True)
-    scheduler.step()
-    print('[%d] loss = %.5f lr = %.8f' % (epoch, sum(losses) / max(1, len(losses)), optimizer.param_groups[0]['lr']))
+        dist = F.pairwise_distance(feat1, feat2, keepdim=True)
+        for l, d in zip(labels.detach().numpy().squeeze(), dist.detach().numpy().squeeze()):
+            pos_dists.append(d) if l == 1 else neg_dists.append(d)
 
-net = net.to('cpu')
-torch.save(
-    {
-        'epoch': epoch + 1,
-        'model': net.state_dict(),
-        'optimizer': optimizer.state_dict()
-    },
-    model_save_path
-)
+    scheduler.step()
+    print('[%d] lr=[%.6f], loss[%.6f] pos_d[%.6f] neg_d[%.6f]' % (
+        epoch,
+        optimizer.param_groups[0]['lr'],
+        np.mean(losses), np.mean(pos_dists), np.mean(neg_dists)))
+
+    if (epoch + 1) % 50 == 0:
+        torch.save({
+            'epoch': epoch + 1,
+            'model': siamese.state_dict(),
+            'optimizer': optimizer.state_dict()
+        }, model_save_path)
+
+siamese = siamese.to('cpu')
+torch.save({
+    'epoch': epoch + 1,
+    'model': siamese.state_dict(),
+    'optimizer': optimizer.state_dict()
+}, model_save_path)
