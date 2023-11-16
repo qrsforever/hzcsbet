@@ -74,7 +74,7 @@ scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20, 50, 100, 1
 epoch_beg = 0
 epoch_num = args.num_epoch
 if os.path.exists(model_resume_path):
-    checkpoint = torch.load(model_resume_path, map_location=lambda storage, _: storage)
+    checkpoint = torch.load(model_resume_path, map_location='cpu')
     siamese.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     epoch_beg = checkpoint['epoch']
@@ -97,15 +97,17 @@ for epoch in range(epoch_beg, epoch_num + 1):
         loss.backward()
         optimizer.step()
         losses.append(loss.item())
-        dist = F.pairwise_distance(feat1, feat2, keepdim=True)
-        for l, d in zip(labels.detach().numpy().squeeze(), dist.detach().numpy().squeeze()):
+        dist = F.pairwise_distance(feat1.detach(), feat2.detach(), keepdim=True)
+        for l, d in zip(labels.detach().squeeze(), dist.squeeze()):
             pos_dists.append(d) if l == 1 else neg_dists.append(d)
 
     scheduler.step()
     print('[%d] lr=[%.6f], loss[%.6f] pos_d[%.6f] neg_d[%.6f]' % (
-        epoch,
+        epoch, 
         optimizer.param_groups[0]['lr'],
-        np.mean(losses), np.mean(pos_dists), np.mean(neg_dists)))
+        torch.mean(torch.tensor(losses)),
+        torch.mean(torch.tensor(pos_dists)),
+        torch.mean(torch.tensor(neg_dists))))
 
     if (epoch + 1) % 50 == 0:
         torch.save({

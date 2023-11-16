@@ -11,7 +11,7 @@
 import torch
 import numpy as np
 import torchvision.transforms as transforms
-from torch.utils.data.dataset import Dataset
+from torch.utils.data import Dataset
 from PIL import Image
 from collections import namedtuple
 
