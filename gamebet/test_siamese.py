@@ -44,7 +44,7 @@ if torch.cuda.is_available():
 
 model_state_dict = None
 if os.path.exists(args.weights_path):
-    ckpts = torch.load(args.resume_from, map_location=device)
+    ckpts = torch.load(args.weights_path, map_location=device)
     model_state_dict = ckpts['model']
 else:
     raise
