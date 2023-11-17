@@ -55,10 +55,10 @@ class SiameseNetwork(nn.Module):
             # (B, 16, 6, 10)
         )
         self.fc = nn.Sequential(
-            nn.Linear(6 * 10 * 16, 16),
-            # nn.Linear(6 * 10 * 16, 512), nn.ReLU(inplace=True), nn.Dropout(p=0.5),
-            # nn.Linear(512, 64), nn.ReLU(inplace=True),
-            # nn.Linear(64, 16)
+            # nn.Linear(6 * 10 * 16, 16),
+            nn.Linear(6 * 10 * 16, 512), nn.ReLU(inplace=True), nn.Dropout(p=0.5),
+            nn.Linear(512, 64), nn.ReLU(inplace=True),
+            nn.Linear(64, 16)
         )
 
     def _forward_once(self, x):
