@@ -61,30 +61,16 @@ data = CameraPair(anchor_images=dataset_sample['pivot_images'], positive_images=
 dataset = CameraPairDataset(data, transform=data_transform)
 test_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
 
-## Loss
-
-learning_rate = args.lr
-criterion = ContrastiveLoss(margin=1.0).to(device)
-
-## Optimizer
-
 siamese = SiameseNetwork().to(device)
 if model_state_dict is not None:
     siamese.load_state_dict(model_state_dict)
 
-## Train
+## Test
 
 with torch.no_grad():
-    losses, pos_dists, neg_dists = [], [], []
+    pos_dists, neg_dists = [], []
     for bx1, bx2, labels in test_loader:
         bx1, bx2, labels = bx1.to(device), bx2.to(device), labels.to(device)
         feat1, feat2 = siamese(bx1, bx2)
         dist = F.pairwise_distance(feat1.detach(), feat2.detach(), keepdim=True)
-        for l, d in zip(labels.detach().squeeze(), dist.squeeze()):
-            pos_dists.append(d) if l == 1 else neg_dists.append(d)
-
-    dist_pos, dist_neg = torch.mean(torch.tensor(pos_dists)), torch.mean(torch.tensor(neg_dists))
-    print('[%d] lr=[%.6f] loss[%.6f] pos_d[%.6f] neg_d[%.6f] ratio[%.6f]' % (
-        torch.mean(torch.tensor(losses)), dist_pos, dist_neg,
-        dist_neg / (dist_pos + 0.000001) 
-        ))
+        print(np.hstack((dist.numpy(), labels.numpy())))
