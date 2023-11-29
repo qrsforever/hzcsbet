@@ -84,7 +84,7 @@ if optim_state_dict is not None:
     optimizer.load_state_dict(optim_state_dict)
 
 # scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
-scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[10, 25, 40], gamma=0.1)
+scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[25, 55, 80], gamma=0.1)
 
 ## Train
 
@@ -113,7 +113,7 @@ for epoch in range(epoch_beg, epoch_num + 1):
         dist_neg / (dist_pos + 0.000001) 
         ))
 
-    if (epoch + 1) % 50 == 0:
+    if (epoch + 1) % 60 == 0:
         torch.save({
             'epoch': epoch + 1,
             'model': siamese.state_dict(),

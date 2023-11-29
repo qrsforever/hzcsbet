@@ -52,3 +52,24 @@ class CameraPairDataset(Dataset):
         return (self.transform(Image.fromarray(x1)), \
                 self.transform(Image.fromarray(x2)), \
                 torch.from_numpy(np.array([int(ix1 == ix2)], dtype=np.float32)))
+
+
+class FieldEdgeImages(Dataset):
+    def __init__(self, data, transform=None):
+        self.data = data
+        self.size = len(data)
+        if transform is None:
+            self.transform = transforms.Compose([
+                transforms.Resize((180, 320)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.0188], std=[0.128])
+            ])
+        else:
+            self.transform = transform
+
+    def __len__(self):
+        return self.size
+
+    def __getitem__(self, index):
+        return self.transform(Image.fromarray(self.data[index]))
+        
