@@ -163,7 +163,7 @@ def generate_features_database(camera_parameter_file, soccer_field_template_file
 
     ground_templ = sio.loadmat(soccer_field_template_file)
     soccer_field = SoccerField(ground_templ['points'], ground_templ['line_segment_index'])
-    cameras = SyntheticDataset.generate_ptz_cameras(motion_param, image_size=image_size, camera_num=image_num)
+    cameras = SyntheticDataset.generate_ptz_cameras(motion_param, image_size=(1280, 720), camera_num=image_num)
 
     image_list = []
     for i in range(image_num):
