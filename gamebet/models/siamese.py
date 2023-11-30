@@ -53,12 +53,13 @@ class SiameseNetwork(nn.Module):
             # (B, 32, 12, 20)
             nn.Conv2d(32, 16, kernel_size=3, stride=2, padding=1), nn.ReLU(inplace=True),
             # (B, 16, 6, 10)
+            nn.Dropout(p=0.3),
         )
         self.fc = nn.Sequential(
-            nn.Linear(6 * 10 * 16, 16),
-            # nn.Linear(6 * 10 * 16, 512), nn.ReLU(inplace=True), nn.Dropout(p=0.5),
-            # nn.Linear(512, 64), nn.ReLU(inplace=True),
-            # nn.Linear(64, 16)
+            # nn.Linear(960, 16), # 960: 6 * 10 * 16
+            nn.Linear(960, 480), nn.ReLU(inplace=True), nn.Dropout(p=0.5),
+            nn.Linear(480, 240), nn.ReLU(inplace=True), # nn.Dropout(p=0.5),
+            nn.Linear(240, 16)
         )
 
     def _forward_once(self, x):

@@ -13,7 +13,6 @@ import scipy.io as sio
 import argparse
 import numpy as np
 import torch
-import torch.optim as optim
 import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
@@ -21,7 +20,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
 from data.camera_pair_dataset import CameraPair, CameraPairDataset
-from models.siamese import ContrastiveLoss, SiameseNetwork
+from models.siamese import SiameseNetwork
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data-path', required=True, type=str, help='a .mat file')
@@ -54,7 +53,7 @@ else:
 data_transform = transforms.Compose([
     transforms.Resize((180, 320)), # H, W
     transforms.ToTensor(),
-    transforms.Normalize(mean=dataset_sample['image_mean'], std=dataset_sample['image_std'])
+    transforms.Normalize(mean=[0.01848], std=[0.11606])
 ])
 
 data = CameraPair(anchor_images=dataset_sample['pivot_images'], positive_images=dataset_sample['positive_images'])
@@ -66,11 +65,17 @@ if model_state_dict is not None:
     siamese.load_state_dict(model_state_dict)
 
 ## Test
-
+siamese.eval()
 with torch.no_grad():
     pos_dists, neg_dists = [], []
     for bx1, bx2, labels in test_loader:
         bx1, bx2, labels = bx1.to(device), bx2.to(device), labels.to(device)
         feat1, feat2 = siamese(bx1, bx2)
         dist = F.pairwise_distance(feat1.detach(), feat2.detach(), keepdim=True)
-        print(np.hstack((dist.numpy(), labels.numpy())))
+        for a, b in list(zip(dist.cpu().detach().numpy(), labels.cpu().detach().numpy())):
+            print(float(a), float(b))
+        for l, d in zip(labels.detach().squeeze(), dist.squeeze()):
+            pos_dists.append(d) if l == 1 else neg_dists.append(d)
+
+    dist_pos, dist_neg = torch.mean(torch.tensor(pos_dists)), torch.mean(torch.tensor(neg_dists))
+    print('pos_d[%.6f] neg_d[%.6f] ratio[%.6f]' % (dist_pos, dist_neg, dist_neg / (dist_pos + 0.000001)))

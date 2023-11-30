@@ -133,8 +133,8 @@ def generate_siamese_dataset(camera_parameter_file, soccer_field_template_file, 
     for i in range(image_num):
         image_piv = SyntheticDataset.generate_camera_image(cams_pivot[i], soccer_field, (1280, 720), thickness=4)
         image_pos = SyntheticDataset.generate_camera_image(cams_positive[i], soccer_field, (1280, 720), thickness=4)
-        image_piv = cv2.cvtColor(cv2.resize(image_piv, image_size), cv2.COLOR_BGR2GRAY)
-        image_pos = cv2.cvtColor(cv2.resize(image_pos, image_size), cv2.COLOR_BGR2GRAY)
+        image_piv = cv2.cvtColor(cv2.resize(image_piv, image_size, interpolation = cv2.INTER_AREA), cv2.COLOR_BGR2GRAY)
+        image_pos = cv2.cvtColor(cv2.resize(image_pos, image_size, interpolation = cv2.INTER_AREA), cv2.COLOR_BGR2GRAY)
         image_piv_list.append(image_piv)
         image_pos_list.append(image_pos)
 
@@ -150,6 +150,7 @@ def generate_siamese_dataset(camera_parameter_file, soccer_field_template_file, 
         sio.savemat(output_file, dataset)
     return dataset
 
+
 def generate_features_database(camera_parameter_file, soccer_field_template_file, image_size=(320, 180), image_num=10000):
     camera_param = sio.loadmat(camera_parameter_file)
     motion_param = CameraMotionParameter(
@@ -159,15 +160,15 @@ def generate_features_database(camera_parameter_file, soccer_field_template_file
         roll = Stats(0, 0.2, -1.0, 1.0),
         tilt = Stats(min=-15.0, max=-5.0)
     )
-    
+
     ground_templ = sio.loadmat(soccer_field_template_file)
     soccer_field = SoccerField(ground_templ['points'], ground_templ['line_segment_index'])
     cameras = SyntheticDataset.generate_ptz_cameras(motion_param, image_size=image_size, camera_num=image_num)
-    
+
     image_list = []
     for i in range(image_num):
         image = SyntheticDataset.generate_camera_image(cameras[i], soccer_field, (1280, 720), thickness=4)
-        image = cv2.cvtColor(cv2.resize(image, image_size), cv2.COLOR_BGR2GRAY)
+        image = cv2.cvtColor(cv2.resize(image, image_size, interpolation = cv2.INTER_AREA), cv2.COLOR_BGR2GRAY)
         image_list.append(image)
-        
+
     return {'images': np.asarray(image_list), 'cameras': cameras}
