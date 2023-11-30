@@ -55,12 +55,14 @@ if os.path.exists(args.resume_from):
     ckpts = torch.load(args.resume_from, map_location=device)
     model_state_dict, optim_state_dict, epoch_beg = ckpts['model'], ckpts['optimizer'], ckpts['epoch']
 
+print('start from: ', epoch_beg, ' mean: ', dataset_sample['image_mean'], ' std: ', dataset_sample['image_std'])
+
 ## Dataset
 
 data_transform = transforms.Compose([
     transforms.Resize((180, 320)), # H, W
     transforms.ToTensor(),
-    transforms.Normalize(mean=dataset_sample['image_mean'], std=dataset_sample['image_std'])
+    transforms.Normalize(mean=[0.01848], std=[0.11606])
 ])
 
 data = CameraPair(anchor_images=dataset_sample['pivot_images'], positive_images=dataset_sample['positive_images'])
@@ -84,7 +86,7 @@ if optim_state_dict is not None:
     optimizer.load_state_dict(optim_state_dict)
 
 # scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
-scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[25, 55, 80], gamma=0.1)
+scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20, 45, 60], gamma=0.1)
 
 ## Train
 
@@ -110,7 +112,7 @@ for epoch in range(epoch_beg, epoch_num + 1):
         epoch,
         optimizer.param_groups[0]['lr'],
         torch.mean(torch.tensor(losses)), dist_pos, dist_neg,
-        dist_neg / (dist_pos + 0.000001) 
+        dist_neg / (dist_pos + 0.000001)
         ))
 
     if (epoch + 1) % 60 == 0:

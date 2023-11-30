@@ -25,6 +25,8 @@ class CameraProp(object):
 class CameraPose(object):
     '''
     This is the camera extrinsic pose. Here is not the linear transform matrix (Camera Pose Transform)
+    https://ksimek.github.io/2012/08/22/extrinsic/
+    TODO the class name is not good. so easy to confuse the transform and extrinsic
     '''
 
     @classmethod
@@ -44,7 +46,7 @@ class CameraPose(object):
                 rmat = rmat @ np.asarray([[c, 0, s], [0, 1, 0], [-s, 0, c]])
             elif axis == 'z':
                 rmat = rmat @ np.asarray([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-        return CameraPose(rmat, offset).I
+        return CameraPose(rmat, offset).I  # Must
 
     def __init__(self, r, t):
         self.r = r
