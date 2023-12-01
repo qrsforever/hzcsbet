@@ -93,7 +93,7 @@ class PerspectiveCamera:
     def project_3d(self, pts_3d: np.ndarray):
         '''
         pts_3d: N x 3
-        pts_2d: N x 2 
+        pts_2d: N x 2
         '''
         pts_3d_hg = np.hstack((pts_3d, np.ones((pts_3d.shape[0], 1)))) # N x 4
         pts_2d = pts_3d_hg @ self.P.T  # (P @ H^T)^T --> H @ P^T
@@ -110,3 +110,22 @@ class PerspectiveCamera:
 
     def __repr__(self):
         return f'K:\n{self.K}\nE:\n{self.E}\nP:\n{self.P}\n'
+
+
+def camera_warp_perspective(h_templ2cam, img_cam, img_size, scale=1, bg=0):
+    # template view (0, 0) at top-left, so v-flip transform
+    trans = np.array([
+        [1, 0, 0],
+        [0, -1, img_size[1]],
+        [0, 0, 1],
+    ])
+    if scale > 1:
+        trans = np.array([
+            [scale, 0, 0],
+            [0, scale, 0],
+            [0, 0, 1]
+        ]) @ trans
+    h_cam2templ = np.linalg.inv(h_templ2cam)
+    return cv2.warpPerspective(
+        img_cam, trans @ h_cam2templ,
+        (scale * img_size[0], scale * img_size[1]), borderMode=cv2.BORDER_CONSTANT, borderValue=bg)
