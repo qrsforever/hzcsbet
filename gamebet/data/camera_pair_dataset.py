@@ -72,4 +72,3 @@ class FieldEdgeImages(Dataset):
 
     def __getitem__(self, index):
         return self.transform(Image.fromarray(self.data[index]))
-        
