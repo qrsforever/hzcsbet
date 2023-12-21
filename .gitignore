@@ -3,6 +3,8 @@
 **/**/.ipynb_checkpoints
 **/**/.DS_Store
 **/**/*.mat
+gamebet/datasets/yolov8
+gamebet/datasets/SoccerNet
 gamebet/datasets/soccer_seg_detection
 .Trash-0
 .flake8
