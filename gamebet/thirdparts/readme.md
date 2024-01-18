@@ -1,0 +1,2 @@
+- https://github.com/ultralytics/ultralytics.git
+- https://github.com/ifzhang/ByteTrack.git
