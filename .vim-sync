@@ -1,0 +1,13 @@
+#!/bin/bash
+
+remote_hostnames=('p40')
+remote_relative_path=('/data/source/hzcsai_com/hzcsbet/')
+
+cd $(dirname $0)
+
+for (( i=0; i<${#remote_hostnames[@]}; i++ ))
+do
+    rsync -azcul --exclude ".git" --relative "$2/$3" "${remote_hostnames[$i]}:${remote_relative_path[$i]}"
+done
+
+cd -
