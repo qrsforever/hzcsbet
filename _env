@@ -1,1 +1,5 @@
-source .venv/pytorch/bin/activate
+#!/usr/bin/env bash
+
+CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
+
+source ${CUR_DIR}/.venv/pytorch/bin/activate

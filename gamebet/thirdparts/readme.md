@@ -1,2 +1,6 @@
 - https://github.com/ultralytics/ultralytics.git
 - https://github.com/ifzhang/ByteTrack.git
+- https://github.com/ray-project/ray.git
+- https://github.com/bhuman/VideoAnalysis.git
+- https://github.com/ChaosAdmStudent/qualitative-badminton-player-analysis.git
+- https://github.com/FootballAnalysis/footballanalysis.git
