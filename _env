@@ -2,4 +2,12 @@
 
 CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 
-source ${CUR_DIR}/.venv/pytorch/bin/activate
+PROJ_TOP_PATH=${CUR_DIR}
+DATASETS_PATH=${PROJ_TOP_PATH}/gamebet/datasets
+export VIDEO_INPUT_PATH=${DATASETS_PATH}/0bfacc_5.mp4
+export VIDEO_OUTPUT_PATH=${DATASETS_PATH}/0bfacc_5_out.mp4
+export EXTERNAL_LIBS_PATH=${PROJ_TOP_PATH}/gamebet/thirdparts
+export YOLO_WEIGHTS_PATH=${PROJ_TOP_PATH}/gamebet/checkpoints/gamebet_yolov8x.pt
+export PYTHONPATH=${EXTERNAL_LIBS_PATH}/ByteTrack:${EXTERNAL_LIBS_PATH}/ultralytics
+
+# source ${CUR_DIR}/.venv/pytorch/bin/activate
