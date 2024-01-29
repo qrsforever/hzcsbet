@@ -4,3 +4,5 @@
 - https://github.com/bhuman/VideoAnalysis.git
 - https://github.com/ChaosAdmStudent/qualitative-badminton-player-analysis.git
 - https://github.com/FootballAnalysis/footballanalysis.git
+- https://github.com/mikel-brostrom/yolo_tracking
+- git clone https://github.com/NirAharon/BoT-SORT.git

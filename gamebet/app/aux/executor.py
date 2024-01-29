@@ -89,6 +89,7 @@ class ExecutorBase(abc.ABC):
                         self.logger.error(f'{err}')
                         out_queue.put(None)
                         break
+        self.logger.warn(f'{self._name} quit loop!')
         self.post_loop(cache)
 
     def start(self, log_queue=None):

@@ -33,16 +33,21 @@ if __name__ == '__main__':
     opt.display_id = -1   # no visdom display; the test code saves the results to a HTML file.
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
 
-    opt.name = 'soccer_seg_pix2pix'
+    # opt.name = 'soccer_seg_pix2pix'
+    opt.name = ''
+    opt.epoch = 'seg'
     model_seg = create_model(opt)      # create a model given opt.model and other options
     model_seg.setup(opt)
 
-    opt.name = 'soccer_det_pix2pix'
+    # opt.name = 'soccer_det_pix2pix'
+    opt.name = ''
+    opt.epoch = 'det'
     model_det = create_model(opt)
     model_det.setup(opt)
 
     for i, data in enumerate(dataset):
         model_seg.set_input(data)
+        print(model_seg.real.shape)
         model_seg.test()
         visuals = model_seg.get_current_visuals()
         img_path = model_seg.get_image_paths()

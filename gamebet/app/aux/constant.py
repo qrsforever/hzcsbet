@@ -4,6 +4,7 @@ import logging
 import os
 from dataclasses import dataclass
 
+## logger
 
 LOGGER_NAME_TO_LEVEL = {
     'debug': logging.DEBUG, 'd': logging.DEBUG, 'D': logging.DEBUG, '10': logging.DEBUG,
@@ -15,12 +16,27 @@ LOGGER_NAME_TO_LEVEL = {
 LOGGER_LEVEL = LOGGER_NAME_TO_LEVEL[os.environ.get('LOG', 'info')]
 LOGGER_FORMAT = logging.Formatter("%(asctime)s - %(process)s - %(levelname)s: %(message)s")
 
+## shared memory
+
+SHM_CACHE_COUNT = 48
+
+## Video
+
+VIDEO_PATH = os.environ.get('VIDEO_INPUT_PATH')
 FRAME_WIDTH = 1920
 FRAME_HEIGHT = 1080
 FRAME_RATE = 30
 
-SHM_CACHE_COUNT = 48
+## Weights
 
+CKPTS_ROOT_PATH = os.environ.get("CHECKPOINTS_ROOT_PATH")
+YOLO_DETECT_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/soccer_yolov8x.pt'
+PIX2PIX_SEG_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/seg_net_G.pth'
+PIX2PIX_DET_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/det_net_G.pth'
+SIAMESE_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/siamese.pth'
+
+
+## tracking
 
 @dataclass(frozen=True)
 class ByteTrackerArgs:
@@ -52,7 +68,9 @@ DETECTION_COLORS = {
     "referee": (0, 0, 255),
 }
 
-CLUSTER_BOUNDARIES = [
+## color cluster
+
+COLOR_CLUSTER_BOUNDARIES = [
     ([43, 31, 4], [128, 0, 0], [250, 88, 50]),           # blue
     ([0, 100, 0], [0, 128, 0], [50, 255, 50]),           # green
     ([17, 15, 100], [0, 0, 255], [50, 56, 200]),         # red
@@ -62,3 +80,52 @@ CLUSTER_BOUNDARIES = [
     ([0, 0, 0], [0, 0, 0], [50, 50, 50]),                # black
     ([187, 169, 112], [255, 255, 255], [255, 255, 255]), # white
 ]
+
+## pix2pix seg
+
+@dataclass
+class Pix2PixArgs:
+    load_size: int = 256
+
+# ----------------- Options ---------------
+#              aspect_ratio: 1.0                           
+#                batch_size: 1                             
+#           checkpoints_dir: ./checkpoints                 
+#                 crop_size: 256                           
+#                  dataroot: ./datasets/soccer_seg_detection/single	[default: None]
+#              dataset_mode: single                        
+#                 direction: AtoB                          
+#           display_winsize: 256                           
+#                     epoch: latest                        
+#                      eval: False                         
+#                   gpu_ids: -1                            	[default: 0]
+#                 init_gain: 0.02                          
+#                 init_type: normal                        
+#                  input_nc: 3                             
+#                   isTrain: False                         	[default: None]
+#                 load_iter: 0                             	[default: 0]
+#                 load_size: 256                           
+#          max_dataset_size: inf                           
+#                     model: test                          
+#              model_suffix:                               
+#                n_layers_D: 3                             
+#                      name: experiment_name               
+#                       ndf: 64                            
+#                      netD: basic                         
+#                      netG: unet_256                      	[default: resnet_9blocks]
+#                       ngf: 64                            
+#                no_dropout: False                         
+#                   no_flip: False                         
+#                      norm: batch                         	[default: instance]
+#                  num_test: 50                            
+#               num_threads: 4                             
+#                 output_nc: 1                             	[default: 3]
+#                     phase: test                          
+#                preprocess: resize_and_crop               
+#               results_dir: ./results/                    
+#            serial_batches: False                         
+#                    suffix:                               
+#                 use_wandb: False                         
+#                   verbose: False                         
+#        wandb_project_name: CycleGAN-and-pix2pix          
+# ----------------- End -------------------

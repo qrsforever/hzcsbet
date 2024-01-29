@@ -8,8 +8,9 @@ import numpy as np
 class DetectExecutor(ExecutorBase):
     _name = 'Detector'
 
-    def __init__(self, conf=0.15):
+    def __init__(self, weights_path, conf=0.15):
         super().__init__()
+        self._weights_path = weights_path
         self._conf = conf
 
     def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
@@ -25,6 +26,5 @@ class DetectExecutor(ExecutorBase):
         return msg
 
     def pre_loop(self, cache):
-        import os
         from ultralytics import YOLO
-        cache['detect'] = YOLO(os.environ.get('YOLO_WEIGHTS_PATH'))
+        cache['detect'] = YOLO(self._weights_path)

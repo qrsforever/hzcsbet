@@ -8,7 +8,7 @@ class SharedResult(object):
         self._boxes_conf_list = None
         self._boxes_clas_list = None
         self._tracker_id_list = None
-        self._team_color_list = None
+        self._team_color_list = None  # C.COLOR_CLUSTER_BOUNDARIES
 
         self._fwidth = fwidth
         self._fheigth = fheight
@@ -18,17 +18,19 @@ class SharedResult(object):
     def __repr__(self) -> str:
         precnt, boxcnt, outstr = 20, 0, ''
         if self._boxes_xyxy_list is not None:
-            outstr += '\n\t xyxy_list: %s' % self._boxes_xyxy_list[:precnt]
+            outstr += '\n  xyxy_list: %s' % self._boxes_xyxy_list[:precnt]
             boxcnt = len(self._boxes_xyxy_list)
         if self._boxes_conf_list is not None:
-            outstr += '\n\t conf_list: %s' % self._boxes_conf_list[:precnt]
+            outstr += '\n  conf_list: %s' % self._boxes_conf_list[:precnt]
         if self._boxes_clas_list is not None:
-            outstr += '\n\t clas_list: %s' % self._boxes_clas_list[:precnt]
+            outstr += '\n  clas_list: %s' % self._boxes_clas_list[:precnt]
         if self._tracker_id_list is not None:
-            outstr += '\n\t trid_list: %s' % self._tracker_id_list[:precnt]
+            outstr += '\n  trid_list: %s' % self._tracker_id_list[:precnt]
         if self._team_color_list is not None:
-            outstr += '\n\t team_list: %s' % self._team_color_list[:precnt]
-        outstr = 'Token: %d, Count: %d Shape: (%d %d)' % (self.token, boxcnt, self._fwidth, self._fheigth) + outstr
+            outstr += '\n  team_list: %s' % self._team_color_list[:precnt]
+        outstr = '\n----------[ Cache ID: %s Token: %d Boxes Count: %d Shape: (%d %d) ]----------' % (
+            self._shmid, self.token, boxcnt, self._fwidth, self._fheigth
+        ) + outstr
         return outstr
 
     def reset(self, token):
@@ -67,10 +69,6 @@ class SharedResult(object):
     @property
     def frame_height(self):
         return self._fheigth
-
-    @property
-    def frame_rate(self):
-        return self._frate
 
     @property
     def token(self):
