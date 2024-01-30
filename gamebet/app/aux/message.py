@@ -9,6 +9,7 @@ class SharedResult(object):
         self._boxes_clas_list = None
         self._tracker_id_list = None
         self._team_color_list = None  # C.COLOR_CLUSTER_BOUNDARIES
+        self._pitch_edge_lines = None
 
         self._fwidth = fwidth
         self._fheigth = fheight
@@ -36,20 +37,22 @@ class SharedResult(object):
     def reset(self, token):
         if self._boxes_xyxy_list is not None:
             del self._boxes_xyxy_list
+            self._boxes_xyxy_list = None
         if self._boxes_conf_list is not None:
             del self._boxes_conf_list
+            self._boxes_conf_list = None
         if self._boxes_clas_list is not None:
             del self._boxes_clas_list
+            self._boxes_clas_list = None
         if self._tracker_id_list is not None:
             del self._tracker_id_list
+            self._tracker_id_list = None
         if self._team_color_list is not None:
             del self._team_color_list
-
-        self._boxes_xyxy_list = None
-        self._boxes_conf_list = None
-        self._boxes_clas_list = None
-        self._tracker_id_list = None
-        self._team_color_list = None
+            self._team_color_list = None
+        if self._pitch_edge_lines is not None:
+            del self._pitch_edge_lines
+            self._pitch_edge_lines = None
         self._token = token
 
         return self
@@ -111,9 +114,17 @@ class SharedResult(object):
         self._tracker_id_list = ids
 
     @property
-    def team_color(self):
+    def team_colors(self):
         return self._team_color_list
 
-    @team_color.setter
-    def team_color(self, colors):
+    @team_colors.setter
+    def team_colors(self, colors):
         self._team_color_list = colors
+
+    @property
+    def pitch_edge_lines(self):
+        return self._pitch_edge_lines
+
+    @pitch_edge_lines.setter
+    def pitch_edge_lines(self, edge_lines):
+        self._pitch_edge_lines = edge_lines

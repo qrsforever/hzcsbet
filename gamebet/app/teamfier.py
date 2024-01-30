@@ -10,7 +10,7 @@ class TeamfierExecutor(ExecutorBase):
     _name = 'Teamfier'
 
     def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
-        msg.team_color = cache['detect_color'](frame, msg.boxes_xyxy)
+        msg.team_colors = cache['detect_color'](frame, msg.boxes_xyxy)
         return msg
 
     def pre_loop(self, cache):

@@ -47,7 +47,6 @@ if __name__ == '__main__':
 
     for i, data in enumerate(dataset):
         model_seg.set_input(data)
-        print(model_seg.real.shape)
         model_seg.test()
         visuals = model_seg.get_current_visuals()
         img_path = model_seg.get_image_paths()

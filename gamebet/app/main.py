@@ -3,7 +3,7 @@
 from detector import DetectExecutor
 from tracking import TrackExecutor
 from teamfier import TeamfierExecutor
-from sinking import SinkingExecutor
+from sinking import BlendSinkExecutor
 from pix2pix import Pix2PixSegExecutor, Pix2PixDetExecutor
 
 from aux.executor import ExecutorBase
@@ -37,16 +37,16 @@ def logger_process(queue):
 class VideoExecutor(ExecutorBase):
     _name = "Master"
 
-    def __init__(self, video_path: str):
+    def __init__(self, video_input_path: str):
         super().__init__()
-        self.video_path = video_path
+        self.video_input_path = video_input_path
 
     def run(self, frame, msg, cache):
         if msg.token > 0:
             self.logger.debug(msg)
         success, image = cache['videocap'].read()
         # only debug
-        if cache['current_count'] == 50:
+        if cache['current_count'] == 120:
             return None
         if not success:
             return None
@@ -56,16 +56,16 @@ class VideoExecutor(ExecutorBase):
 
     def pre_loop(self, cache):
         import cv2
-        if self.video_path is None or not os.path.exists(self.video_path):
+        if self.video_input_path is None or not os.path.exists(self.video_input_path):
             self.send(None)
-            self.logger.error(f'video path: {self.video_path} is not valid!!!')
+            self.logger.error(f'video path: {self.video_input_path} is not valid!!!')
             return
-        cap = cv2.VideoCapture(self.video_path)
+        cap = cv2.VideoCapture(self.video_input_path)
         if not cap.isOpened():
             self.send(None)
-            self.logger.error(f'{self.video_path} is not valid!!!')
+            self.logger.error(f'{self.video_input_path} is not valid!!!')
             return
-        frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         frame_rate = int(cap.get(cv2.CAP_PROP_FPS))
@@ -74,7 +74,7 @@ class VideoExecutor(ExecutorBase):
         for i in range(C.SHM_CACHE_COUNT):
             name = 'cache-%d' % i
             if not os.path.exists(f'/dev/shm/{name}'):
-                shared_mem = SharedMemory(name=name, create=True, size=size)
+                shared_mem = SharedMemory(name=name, create=True, size=size)  # pyright: ignore[reportArgumentType]
                 shared_mem.close()
             self.send(SharedResult(name, frame_width, frame_height))
 
@@ -107,14 +107,15 @@ def main():
     use_gpu = torch.cuda.is_available()
 
     print("Main Starting...")
-    sinking = SinkingExecutor()
+    sinking = BlendSinkExecutor(video_output_path=f'{C.APP_OUTPUT_PATH}/out.mp4')
     teamfier = TeamfierExecutor()
     tracking = TrackExecutor()
     detector = DetectExecutor(C.YOLO_DETECT_WEIGHTS_PATH, conf=0.2)
     pix2seg  = Pix2PixSegExecutor(C.PIX2PIX_SEG_WEIGHTS_PATH, use_gpu=use_gpu)
-    mainproc = VideoExecutor(video_path=C.VIDEO_PATH)
+    pix2det  = Pix2PixDetExecutor(C.PIX2PIX_DET_WEIGHTS_PATH, use_gpu=use_gpu)
+    mainproc = VideoExecutor(video_input_path=C.VIDEO_INPUT_PATH)
 
-    mainproc.linkto(pix2seg).linkto(detector).linkto(sinking).linkto(mainproc, False)
+    mainproc.linkto(pix2seg).linkto(pix2det).linkto(sinking).linkto(mainproc, False)
     # mainproc.linkto(detector).linkto(tracking).linkto(teamfier).linkto(sinking).linkto(mainproc, False)
 
     mainproc.start(logger_queue)

@@ -28,7 +28,7 @@ def shared_memory_to_numpy(msg):
 
 
 class ExecutorBase(abc.ABC):
-    _name: str = None
+    _name: str = '__base__'
 
     def __init__(self):
         self._proc = None

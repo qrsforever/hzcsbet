@@ -3,6 +3,7 @@
 from aux.executor import ExecutorBase
 from aux.message import SharedResult
 import numpy as np
+import cv2
 
 
 class Pix2PixExecutor(ExecutorBase):
@@ -12,12 +13,7 @@ class Pix2PixExecutor(ExecutorBase):
         self._weights_path = weights_path
         self._use_gpu = use_gpu
 
-    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
-        frame[:] = cache['pix2pix_infer'](frame)
-        return msg
-
     def pre_loop(self, cache):
-        import cv2
         import torch
         import torchvision.transforms as T
         from PIL import Image
@@ -42,19 +38,29 @@ class Pix2PixExecutor(ExecutorBase):
             real = transform(frame)
             input = torch.unsqueeze(real, dim=0).to(device)
             fake = netG(input)
-            mask = fake.cpu().numpy().squeeze()
-            mask = np.asarray((mask + 1) / 2.0 * 255, dtype=np.uint8)
-            mask = cv2.resize(mask, frame.shape[:2][::-1])
-            return cv2.bitwise_and(frame, frame, mask=mask)
+            return fake.cpu().numpy().squeeze()
 
-        cache['pix2pix_infer'] = model_infer
-
-    def post_loop(self, cache):
-        pass
+        cache['infer'] = model_infer
 
 
 class Pix2PixSegExecutor(Pix2PixExecutor):
     _name = "Pix2PixSeg"
 
+    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
+        image_gray_numpy = cache['infer'](frame) # shape: (256 256)
+        image_mask_numpy = np.asarray((image_gray_numpy + 1) / 2.0 * 255, dtype=np.uint8)
+        image_mask_numpy = cv2.resize(image_mask_numpy, frame.shape[:2][::-1])
+        frame[:] = cv2.bitwise_and(frame, frame, mask=image_mask_numpy)
+        return msg
+
 class Pix2PixDetExecutor(Pix2PixExecutor):
     _name = "Pix2PixDet"
+
+    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
+        image_gray_numpy = cache['infer'](frame) # shape: (256 256)
+        image_rgb_numpy = np.tile(image_gray_numpy, (3, 1, 1)) # gray to rgb
+        image_rgb_numpy = (np.transpose(image_rgb_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0
+        image_rgb_numpy = image_rgb_numpy.astype(dtype=np.uint8)
+        edges = cv2.resize(image_rgb_numpy, frame.shape[:2][::-1])
+        frame[:] = cv2.addWeighted(frame, 0.6, edges, 0.4, 0)
+        return msg

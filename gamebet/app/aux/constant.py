@@ -16,13 +16,15 @@ LOGGER_NAME_TO_LEVEL = {
 LOGGER_LEVEL = LOGGER_NAME_TO_LEVEL[os.environ.get('LOG', 'info')]
 LOGGER_FORMAT = logging.Formatter("%(asctime)s - %(process)s - %(levelname)s: %(message)s")
 
-## shared memory
+## app & shared memory
 
 SHM_CACHE_COUNT = 48
 
+APP_OUTPUT_PATH = os.environ.get('APP_OUTPUT_PATH', 'output')
+
 ## Video
 
-VIDEO_PATH = os.environ.get('VIDEO_INPUT_PATH')
+VIDEO_INPUT_PATH = os.environ.get('VIDEO_INPUT_PATH', '')
 FRAME_WIDTH = 1920
 FRAME_HEIGHT = 1080
 FRAME_RATE = 30

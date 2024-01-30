@@ -62,7 +62,6 @@ class TestModel(BaseModel):
 
     def forward(self):
         """Run forward pass."""
-        print('22222222', self.real.shape)
         self.fake = self.netG(self.real)  # G(real)
 
     def optimize_parameters(self):
