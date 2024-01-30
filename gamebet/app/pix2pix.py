@@ -8,7 +8,7 @@ import cv2
 
 class Pix2PixExecutor(ExecutorBase):
 
-    def __init__(self, weights_path, use_gpu=False):
+    def __init__(self, weights_path, use_gpu):
         super().__init__()
         self._weights_path = weights_path
         self._use_gpu = use_gpu
@@ -16,18 +16,21 @@ class Pix2PixExecutor(ExecutorBase):
     def pre_loop(self, cache):
         import torch
         import torchvision.transforms as T
+        import torchvision.transforms.functional as F
         from PIL import Image
         from models import networks
-
-        def transform(frame):
-            image_pil = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            return T.Compose([
-                T.Resize((256, 256), T.InterpolationMode.BICUBIC),
-                T.ToTensor(),
-                T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-            ])(image_pil)
+        import time
 
         device = torch.device('cuda:0') if self._use_gpu else torch.device('cpu')
+
+        def transform(frame):
+            image_numpy = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            transform = torch.nn.Sequential(
+                T.Resize((256, 256), T.InterpolationMode.BICUBIC, antialias=False),  # type: ignore
+                T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ).to(device)
+            return transform(F.to_tensor(image_numpy))
+
         netG = networks.UnetGenerator(3, 1, 8, 64, use_dropout=False)
         netG.load_state_dict(torch.load(self._weights_path, map_location=device))
         netG.to(device)

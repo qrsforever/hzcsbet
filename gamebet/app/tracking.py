@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pyright: ignore[reportArgumentType]
+
 from aux.executor import ExecutorBase
 from aux.message import SharedResult
 from aux.constant import ByteTrackerArgs

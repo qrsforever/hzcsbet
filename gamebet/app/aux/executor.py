@@ -23,7 +23,7 @@ def shared_memory_to_numpy(msg):
     finally:
         # TODO: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
         # https://forums.raspberrypi.com/viewtopic.php?t=340441
-        unregister(shared_mem._name, 'shared_memory')
+        # unregister(shared_mem._name, 'shared_memory') # type: ignore
         shared_mem.close()
 
 
@@ -58,6 +58,12 @@ class ExecutorBase(abc.ABC):
     def post_loop(self, cache):
         pass
 
+    # TODO: https://stackoverflow.com/questions/62830911/typeerror-cannot-pickle-weakref-object
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['_proc'] = None
+        return state
+
     def _task_run(self, log_queue: mp.Queue, in_queue: mp.Queue, out_queue: mp.Queue) -> None:
         # self._name = mp.current_process().name
         if log_queue is None:
@@ -73,6 +79,9 @@ class ExecutorBase(abc.ABC):
         self.logger = logger
         self.logger.info(f'{self.name} task is running!')
         cache = {}
+        import time
+        import torch
+        torch.backends.cudnn.benchmark = True
         self.pre_loop(cache)
         while True:
             msg = in_queue.get()
@@ -84,7 +93,10 @@ class ExecutorBase(abc.ABC):
             if out_queue is not None:
                 with shared_memory_to_numpy(msg) as frame:
                     try:
-                        out_queue.put(self.run(frame, msg, cache))
+                        t0 = time.time()
+                        out = self.run(frame, msg, cache)
+                        self.logger.debug(f'{self._name} timeit: {time.time() - t0}')
+                        out_queue.put(out)
                     except Exception as err:
                         self.logger.error(f'{err}')
                         out_queue.put(None)

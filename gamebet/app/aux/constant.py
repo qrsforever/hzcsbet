@@ -18,7 +18,7 @@ LOGGER_FORMAT = logging.Formatter("%(asctime)s - %(process)s - %(levelname)s: %(
 
 ## app & shared memory
 
-SHM_CACHE_COUNT = 48
+SHM_CACHE_COUNT = 24
 
 APP_OUTPUT_PATH = os.environ.get('APP_OUTPUT_PATH', 'output')
 
@@ -27,7 +27,7 @@ APP_OUTPUT_PATH = os.environ.get('APP_OUTPUT_PATH', 'output')
 VIDEO_INPUT_PATH = os.environ.get('VIDEO_INPUT_PATH', '')
 FRAME_WIDTH = 1920
 FRAME_HEIGHT = 1080
-FRAME_RATE = 30
+FRAME_RATE = 25
 
 ## Weights
 

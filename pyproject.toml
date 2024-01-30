@@ -63,3 +63,4 @@ reportMissingImports = true
 reportMissingTypeStubs = false
 reportUnusedVariable = false
 reportOptionalSubscript = false
+reportArgumentType = false

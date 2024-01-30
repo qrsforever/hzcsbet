@@ -4,11 +4,10 @@ from detector import DetectExecutor
 from tracking import TrackExecutor
 from teamfier import TeamfierExecutor
 from sinking import BlendSinkExecutor
-from pix2pix import Pix2PixSegExecutor, Pix2PixDetExecutor
+from pix2pix import Pix2PixDetExecutor, Pix2PixSegExecutor
 
 from aux.executor import ExecutorBase
 from aux.message import SharedResult
-
 import aux.constant as C
 
 import os
@@ -16,6 +15,7 @@ import logging
 import multiprocessing as mp
 import numpy as np
 import torch
+import argparse
 
 from multiprocessing.shared_memory import SharedMemory
 from logging.handlers import QueueListener
@@ -37,16 +37,17 @@ def logger_process(queue):
 class VideoExecutor(ExecutorBase):
     _name = "Master"
 
-    def __init__(self, video_input_path: str):
+    def __init__(self, video_input_path: str, debug_frame_count=-1):
         super().__init__()
         self.video_input_path = video_input_path
+        self.debug_frame_count = debug_frame_count
 
     def run(self, frame, msg, cache):
         if msg.token > 0:
             self.logger.debug(msg)
         success, image = cache['videocap'].read()
         # only debug
-        if cache['current_count'] == 120:
+        if cache['current_count'] == self.debug_frame_count:
             return None
         if not success:
             return None
@@ -98,25 +99,32 @@ class VideoExecutor(ExecutorBase):
 
 def main():
 
+    use_gpu = torch.cuda.is_available()
+    if use_gpu:
+        torch.multiprocessing.set_start_method('forkserver', force=True)
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--dfc', type=int, default=-1, help='debug frame count')
+    args = parser.parse_args()
+
+    logger_queue = mp.Queue()
     logger_queue = mp.Queue()
     logger_handler = logging.StreamHandler()
     logger_handler.setFormatter(C.LOGGER_FORMAT)
     queue_listener = QueueListener(logger_queue, logger_handler)
     queue_listener.start()
 
-    use_gpu = torch.cuda.is_available()
-
     print("Main Starting...")
-    sinking = BlendSinkExecutor(video_output_path=f'{C.APP_OUTPUT_PATH}/out.mp4')
+    sinking = BlendSinkExecutor(video_output_path=f'{C.APP_OUTPUT_PATH}/blend_out.mp4')
     teamfier = TeamfierExecutor()
     tracking = TrackExecutor()
     detector = DetectExecutor(C.YOLO_DETECT_WEIGHTS_PATH, conf=0.2)
     pix2seg  = Pix2PixSegExecutor(C.PIX2PIX_SEG_WEIGHTS_PATH, use_gpu=use_gpu)
     pix2det  = Pix2PixDetExecutor(C.PIX2PIX_DET_WEIGHTS_PATH, use_gpu=use_gpu)
-    mainproc = VideoExecutor(video_input_path=C.VIDEO_INPUT_PATH)
+    mainproc = VideoExecutor(video_input_path=C.VIDEO_INPUT_PATH, debug_frame_count=args.dfc)
 
-    mainproc.linkto(pix2seg).linkto(pix2det).linkto(sinking).linkto(mainproc, False)
-    # mainproc.linkto(detector).linkto(tracking).linkto(teamfier).linkto(sinking).linkto(mainproc, False)
+    # mainproc.linkto(pix2seg).linkto(pix2det).linkto(sinking).linkto(mainproc, False)
+    mainproc.linkto(pix2seg).linkto(detector).linkto(tracking).linkto(teamfier).linkto(pix2det).linkto(sinking).linkto(mainproc, False)
 
     mainproc.start(logger_queue)
     mainproc.join()
