@@ -4,7 +4,12 @@ from detector import DetectExecutor
 from tracking import TrackExecutor
 from teamfier import TeamfierExecutor
 from sinking import BlendSinkExecutor
-from pix2pix import Pix2PixDetExecutor, Pix2PixSegExecutor
+from pix2pix import (
+    Pix2PixSegExecutor,
+    Pix2PixDetExecutor,
+    Pix2PixDetSiameseExecutor,
+    Pix2PixSegDetSiameseExecutor,
+)
 
 from aux.executor import ExecutorBase
 from aux.message import SharedResult
@@ -19,19 +24,6 @@ import argparse
 
 from multiprocessing.shared_memory import SharedMemory
 from logging.handlers import QueueListener
-
-
-def logger_process(queue):
-    console = logging.StreamHandler()
-    console.setFormatter(C.LOGGER_FORMAT)
-    logger = logging.getLogger('app')
-    logger.addHandler(console)
-    logger.setLevel(C.LOGGER_LEVEL)
-    while True:
-        message = queue.get()
-        if message is None:
-            break
-        logger.handle(message)
 
 
 class VideoExecutor(ExecutorBase):
@@ -119,12 +111,19 @@ def main():
     teamfier = TeamfierExecutor()
     tracking = TrackExecutor()
     detector = DetectExecutor(C.YOLO_DETECT_WEIGHTS_PATH, conf=0.2)
-    pix2seg  = Pix2PixSegExecutor(C.PIX2PIX_SEG_WEIGHTS_PATH, use_gpu=use_gpu)
-    pix2det  = Pix2PixDetExecutor(C.PIX2PIX_DET_WEIGHTS_PATH, use_gpu=use_gpu)
+    # pix2seg = Pix2PixSegExecutor(C.PIX2PIX_SEG_WEIGHTS_PATH, use_gpu=use_gpu)
+    # pix2det = Pix2PixDetExecutor(C.PIX2PIX_DET_WEIGHTS_PATH, use_gpu=use_gpu)
+    # pix2detsme = Pix2PixDetSiameseExecutor(C.PIX2PIX_DET_WEIGHTS_PATH, C.SIAMESE_WEIGHTS_PATH, use_gpu=use_gpu)
+    pix2pix = Pix2PixSegDetSiameseExecutor(
+        C.PIX2PIX_SEG_WEIGHTS_PATH,
+        C.PIX2PIX_DET_WEIGHTS_PATH,
+        C.SIAMESE_WEIGHTS_PATH,
+        use_gpu=use_gpu, blend_seg=True, blend_det=False)
     mainproc = VideoExecutor(video_input_path=C.VIDEO_INPUT_PATH, debug_frame_count=args.dfc)
 
-    # mainproc.linkto(pix2seg).linkto(pix2det).linkto(sinking).linkto(mainproc, False)
-    mainproc.linkto(pix2seg).linkto(detector).linkto(tracking).linkto(teamfier).linkto(pix2det).linkto(sinking).linkto(mainproc, False)
+    mainproc.linkto(pix2pix).linkto(detector).linkto(tracking).linkto(teamfier).linkto(sinking).linkto(mainproc, False)
+    # mainproc.linkto(pix2seg).linkto(pix2detsme).linkto(sinking).linkto(mainproc, False)
+    # mainproc.linkto(pix2seg).linkto(detector).linkto(tracking).linkto(teamfier).linkto(pix2det).linkto(sinking).linkto(mainproc, False)
 
     mainproc.start(logger_queue)
     mainproc.join()

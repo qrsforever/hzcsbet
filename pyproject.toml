@@ -5,13 +5,14 @@ pythonPlatform = "Linux"
 venvPath = ".venv"
 venv = "pytorch"
 include = [
-    "gamebet/app"
+    "gamebet/app",
 ]
 
 exclude = [
     "**/__pycache__",
     "**/__pypackages__",
     "**/.ipynb_checkpoints",
+    "**/assets",
     "src/typestubs",
     ".venv",
 ]
@@ -21,39 +22,39 @@ ignore = [
     "src/oldstuff"
 ]
 
-# Paths of directories or files that should use “strict” analysis if they are included ('# pyright: strict')
-strict = []
+# Paths of directories or files that should use 'strict' analysis if they are included ('# pyright: strict')
+# strict = []
 
 # Set of identifiers that should be assumed to contain a constant value wherever used within this program
-defineConstant = {
-    DEBUG = true
-}
+# defineConstant = { DEBUG = true }
 
 # Path to a directory that contains typeshed type stub files
-# typeshedPath =  
+# typeshedPath =
 
 # Path to a directory that contains custom type stubs
 # stubPath = "src/stubs"
 
 # Specifies whether output logs should be verbose.
-verboseOutput = False
+verboseOutput = true
 
 # Additional search paths that will be used when searching for modules imported by files
 extraPaths = [
+    "./gamebet/thirdparts/ultralytics",
+    "./gamebet/thirdparts/ByteTrack",
 ]
 
 executionEnvironments = [
-    { root = "src" },
     { root = "test", extraPaths = [
         "src",
         ".",
     ] },
 ]
 
+
 # Specifies the default rule set to use: "off", "basic", "standard", "strict"
 typeCheckingMode = "basic"
 
-# Determines whether pyright reads, parses and analyzes library code to extract type information in the absence of type stub files. 
+# Determines whether pyright reads, parses and analyzes library code to extract type information in the absence of type stub files.
 useLibraryCodeForTypes = true
 
 # defines support for "# type: ignore" comments
@@ -64,3 +65,4 @@ reportMissingTypeStubs = false
 reportUnusedVariable = false
 reportOptionalSubscript = false
 reportArgumentType = false
+reportAttributeAccessIssue = false

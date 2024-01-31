@@ -27,11 +27,11 @@ class SinkingExecutor(ExecutorBase):
 
         def draw_detections(frame, xyxy_list, clas_list, trid_list, color_list):
             image = frame.copy()
-            if xyxy_list is None or len(xyxy_list) == 0:
+            if len(xyxy_list) == 0:
                 return image
             box_color = C.DETECTION_COLORS['player']
-            draw_trid = False if trid_list is None else True
-            draw_team = False if color_list is None else True
+            draw_trid = False if len(trid_list) > 0 else True
+            draw_team = False if len(color_list) > 0 else True
             for i in range(len(xyxy_list)):
                 if clas_list[i] != 1: # players
                     continue
@@ -80,10 +80,10 @@ class BlendSinkExecutor(FileSinkExecutor):
         trid_list, color_list = msg.tracklet_ids, msg.team_colors
 
         image = frame.copy()
-        if xyxy_list is not None and len(xyxy_list) > 0:
+        if len(xyxy_list) > 0:
             box_color = C.DETECTION_COLORS['player']
-            draw_trid = False if trid_list is None else True
-            draw_team = False if color_list is None else True
+            draw_trid = False if len(trid_list) > 0 else True
+            draw_team = False if len(color_list) > 0 else True
             for i in range(len(xyxy_list)):
                 if clas_list[i] != 1: # players  # type: ignore
                     continue

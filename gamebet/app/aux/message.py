@@ -4,12 +4,12 @@
 class SharedResult(object):
     def __init__(self, shmid: str, fwidth: int = 1920, fheight: int = 1080) -> None:
         self._shmid = shmid
-        self._boxes_xyxy_list = None
-        self._boxes_conf_list = None
-        self._boxes_clas_list = None
-        self._tracker_id_list = None
-        self._team_color_list = None  # C.COLOR_CLUSTER_BOUNDARIES
-        self._pitch_edge_lines = None
+        self._boxes_xyxy_list: list = []
+        self._boxes_conf_list: list = []
+        self._boxes_clas_list: list = []
+        self._tracker_id_list: list = []
+        self._team_color_list: list = []   # C.COLOR_CLUSTER_BOUNDARIES
+        self._pitch_feat_list: list = []
 
         self._fwidth = fwidth
         self._fheigth = fheight
@@ -18,41 +18,31 @@ class SharedResult(object):
 
     def __repr__(self) -> str:
         precnt, boxcnt, outstr = 20, 0, ''
-        if self._boxes_xyxy_list is not None:
+        if len(self._boxes_xyxy_list) > 0:
             outstr += '\n  xyxy_list: %s' % self._boxes_xyxy_list[:precnt]
             boxcnt = len(self._boxes_xyxy_list)
-        if self._boxes_conf_list is not None:
+        if len(self._boxes_conf_list) > 0:
             outstr += '\n  conf_list: %s' % self._boxes_conf_list[:precnt]
-        if self._boxes_clas_list is not None:
+        if len(self._boxes_clas_list) > 0:
             outstr += '\n  clas_list: %s' % self._boxes_clas_list[:precnt]
-        if self._tracker_id_list is not None:
+        if len(self._tracker_id_list) > 0:
             outstr += '\n  trid_list: %s' % self._tracker_id_list[:precnt]
-        if self._team_color_list is not None:
+        if len(self._team_color_list) > 0:
             outstr += '\n  team_list: %s' % self._team_color_list[:precnt]
+        if len(self._pitch_feat_list) > 0:
+            outstr += '\n  feat_list: %s' % self._pitch_feat_list
         outstr = '\n----------[ Cache ID: %s Token: %d Boxes Count: %d Shape: (%d %d) ]----------' % (
             self._shmid, self.token, boxcnt, self._fwidth, self._fheigth
         ) + outstr
         return outstr
 
     def reset(self, token):
-        if self._boxes_xyxy_list is not None:
-            del self._boxes_xyxy_list
-            self._boxes_xyxy_list = None
-        if self._boxes_conf_list is not None:
-            del self._boxes_conf_list
-            self._boxes_conf_list = None
-        if self._boxes_clas_list is not None:
-            del self._boxes_clas_list
-            self._boxes_clas_list = None
-        if self._tracker_id_list is not None:
-            del self._tracker_id_list
-            self._tracker_id_list = None
-        if self._team_color_list is not None:
-            del self._team_color_list
-            self._team_color_list = None
-        if self._pitch_edge_lines is not None:
-            del self._pitch_edge_lines
-            self._pitch_edge_lines = None
+        self._boxes_xyxy_list.clear()
+        self._boxes_conf_list.clear()
+        self._boxes_clas_list.clear()
+        self._tracker_id_list.clear()
+        self._team_color_list.clear()
+        self._pitch_feat_list.clear()
         self._token = token
 
         return self
@@ -122,9 +112,9 @@ class SharedResult(object):
         self._team_color_list = colors
 
     @property
-    def pitch_edge_lines(self):
-        return self._pitch_edge_lines
+    def pitch_feats(self):
+        return self._pitch_feat_list
 
-    @pitch_edge_lines.setter
-    def pitch_edge_lines(self, edge_lines):
-        self._pitch_edge_lines = edge_lines
+    @pitch_feats.setter
+    def pitch_feats(self, feats):
+        self._pitch_feat_list = feats

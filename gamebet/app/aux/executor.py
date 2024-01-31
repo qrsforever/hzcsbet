@@ -83,6 +83,8 @@ class ExecutorBase(abc.ABC):
         import torch
         torch.backends.cudnn.benchmark = True
         self.pre_loop(cache)
+        # TODO shm resource_tracker deletation issue
+        shmid_cache = set()
         while True:
             msg = in_queue.get()
             if msg is None:
@@ -90,6 +92,7 @@ class ExecutorBase(abc.ABC):
                     out_queue.put(None)
                 break
             self.logger.debug(f'{self._name} get a message cache: {msg._shmid}.')
+            shmid_cache.add(msg._shmid)
             if out_queue is not None:
                 with shared_memory_to_numpy(msg) as frame:
                     try:
@@ -102,6 +105,12 @@ class ExecutorBase(abc.ABC):
                         out_queue.put(None)
                         break
         self.logger.warn(f'{self._name} quit loop!')
+        for shmid in shmid_cache:
+            try:
+                # https://forums.raspberrypi.com/viewtopic.php?t=340441
+                unregister('/' + shmid, 'shared_memory')
+            except:
+                pass
         self.post_loop(cache)
 
     def start(self, log_queue=None):
