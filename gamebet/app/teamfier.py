@@ -9,7 +9,8 @@ import numpy as np
 class TeamfierExecutor(ExecutorBase):
     _name = 'Teamfier'
 
-    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
+    def run(self, shared_frames: tuple[np.ndarray], msg: SharedResult, cache: dict) -> SharedResult:
+        frame = shared_frames[0]
         msg.team_colors = cache['detect_color'](frame, msg.boxes_xyxy)
         return msg
 

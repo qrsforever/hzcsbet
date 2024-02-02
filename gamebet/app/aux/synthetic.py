@@ -36,7 +36,7 @@ class SyntheticDataset(object):
         pass
 
     @staticmethod
-    def generate_ptz_cameras(motion_param:CameraMotionParameter, image_size:tuple, camera_num:int):
+    def generate_ptz_cameras(motion_param: CameraMotionParameter, image_size: tuple, camera_num: int):
         rnd_normal = lambda stat, size: np.random.normal(stat.mean, stat.std, (camera_num, size))
         rnd_uniform = lambda stat: np.random.uniform(stat.min, stat.max, camera_num)
         ccs = rnd_normal(motion_param.cc, 3)
@@ -58,7 +58,10 @@ class SyntheticDataset(object):
             cameras[i][6], cameras[i][7], cameras[i][8] = t[0][0], t[1][0], t[2][0]
         return cameras
 
-    def generate_camera_pair(motion_param:CameraMotionParameter, motion_std:MotionStd, image_size:tuple, camera_num:int):
+    def generate_camera_pair(
+            motion_param: CameraMotionParameter,  # pyright: ignore
+            motion_std: MotionStd,
+            image_size: tuple, camera_num: int):
         rnd_normal = lambda stat, size: np.random.normal(stat.mean, stat.std, (camera_num, size))
         rnd_uniform = lambda stat: np.random.uniform(stat.min, stat.max, camera_num)
         rnd_nearby = lambda d, std: d + np.random.uniform(-0.5, 0.5, 1) * std
@@ -97,7 +100,7 @@ class SyntheticDataset(object):
         return cams_pivot, cams_positive
 
     @staticmethod
-    def generate_camera_image(camera_data:np.ndarray, soccer_field:SoccerField, image_size:tuple, thickness=4):
+    def generate_camera_image(camera_data: np.ndarray, soccer_field: SoccerField, image_size: tuple, thickness=4):
         prop = CameraProp(cx=camera_data[0], cy=camera_data[1], fl=camera_data[2])
         pose = CameraPose.from_axis_angle(camera_data[3:6], camera_data[6:9])
         camera = PerspectiveCamera(prop, pose)

@@ -24,9 +24,8 @@ APP_OUTPUT_PATH = os.environ.get('APP_OUTPUT_PATH', 'output')
 
 ## Video
 
-VIDEO_INPUT_PATH = os.environ.get('VIDEO_INPUT_PATH', '')
-FRAME_WIDTH = 1920
-FRAME_HEIGHT = 1080
+FRAME_WIDTH = 1280
+FRAME_HEIGHT = 720
 FRAME_RATE = 25
 
 ## Weights
@@ -36,7 +35,8 @@ YOLO_DETECT_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/soccer_yolov8x.pt'
 PIX2PIX_SEG_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/seg_net_G.pth'
 PIX2PIX_DET_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/det_net_G.pth'
 SIAMESE_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/siamese.pth'
-
+FEATURES_CAMERAS_PARAMS_PATH = f'{CKPTS_ROOT_PATH}/features_cameras_params.mat'
+FEATURES_CAMERAS_HOG_PARAMS_PATH = f'{CKPTS_ROOT_PATH}/features_cameras_hog_params.mat'
 
 ## tracking
 
@@ -89,45 +89,6 @@ COLOR_CLUSTER_BOUNDARIES = [
 class Pix2PixArgs:
     load_size: int = 256
 
-# ----------------- Options ---------------
-#              aspect_ratio: 1.0                           
-#                batch_size: 1                             
-#           checkpoints_dir: ./checkpoints                 
-#                 crop_size: 256                           
-#                  dataroot: ./datasets/soccer_seg_detection/single	[default: None]
-#              dataset_mode: single                        
-#                 direction: AtoB                          
-#           display_winsize: 256                           
-#                     epoch: latest                        
-#                      eval: False                         
-#                   gpu_ids: -1                            	[default: 0]
-#                 init_gain: 0.02                          
-#                 init_type: normal                        
-#                  input_nc: 3                             
-#                   isTrain: False                         	[default: None]
-#                 load_iter: 0                             	[default: 0]
-#                 load_size: 256                           
-#          max_dataset_size: inf                           
-#                     model: test                          
-#              model_suffix:                               
-#                n_layers_D: 3                             
-#                      name: experiment_name               
-#                       ndf: 64                            
-#                      netD: basic                         
-#                      netG: unet_256                      	[default: resnet_9blocks]
-#                       ngf: 64                            
-#                no_dropout: False                         
-#                   no_flip: False                         
-#                      norm: batch                         	[default: instance]
-#                  num_test: 50                            
-#               num_threads: 4                             
-#                 output_nc: 1                             	[default: 3]
-#                     phase: test                          
-#                preprocess: resize_and_crop               
-#               results_dir: ./results/                    
-#            serial_batches: False                         
-#                    suffix:                               
-#                 use_wandb: False                         
-#                   verbose: False                         
-#        wandb_project_name: CycleGAN-and-pix2pix          
-# ----------------- End -------------------
+## camera
+
+WORLDCUP2014_TEMPL_PATH = f'{CKPTS_ROOT_PATH}/worldcup2014.mat'

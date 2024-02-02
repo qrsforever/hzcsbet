@@ -2,6 +2,7 @@
 
 from aux.executor import ExecutorBase
 from aux.message import SharedResult
+import aux.constant as C
 import numpy as np
 import cv2
 import torch
@@ -69,12 +70,13 @@ class Pix2PixExecutor(ExecutorBase):
 
 class Pix2PixSegExecutor(Pix2PixExecutor):
     _name = "Pix2Seg"
+    _seg_weights_path = C.PIX2PIX_SEG_WEIGHTS_PATH
 
-    def __init__(self, weights_path, use_gpu):
+    def __init__(self, use_gpu):
         super().__init__(use_gpu)
-        self._seg_weights_path = weights_path
 
-    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
+    def run(self, shared_frames: tuple[np.ndarray, ...], msg: SharedResult, cache: dict) -> SharedResult:
+        frame = shared_frames[0]
         # seg_out shape: (256 256)
         _, seg_out = cache['seg_infer'](cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         imgmsk_np = np.asarray((seg_out + 1) / 2.0 * 255, dtype=np.uint8)
@@ -88,19 +90,21 @@ class Pix2PixSegExecutor(Pix2PixExecutor):
 
 class Pix2PixDetExecutor(Pix2PixExecutor):
     _name = "Pix2Det"
+    _det_weights_path = C.PIX2PIX_DET_WEIGHTS_PATH
 
-    def __init__(self, weights_path, use_gpu):
+    def __init__(self, use_gpu):
         super().__init__(use_gpu)
-        self._det_weights_path = weights_path
 
-    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
+    def run(self, shared_frames: tuple[np.ndarray, ...], msg: SharedResult, cache: dict) -> SharedResult:
+        frame, view = shared_frames[0], shared_frames[1]
         # det_out shape: (256 256)
         _, det_out = cache['det_infer'](cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         imgrgb_np = np.tile(det_out, (3, 1, 1)) # gray to rgb
         imgrgb_np = (np.transpose(imgrgb_np, (1, 2, 0)) + 1) / 2.0 * 255.0
         imgrgb_np = imgrgb_np.astype(dtype=np.uint8)
-        edges = cv2.resize(imgrgb_np, frame.shape[:2][::-1])
-        frame[:] = cv2.addWeighted(frame, 0.6, edges, 0.4, 0)
+        edge_image = cv2.resize(imgrgb_np, frame.shape[:2][::-1])
+        # frame[:] = cv2.addWeighted(frame, 0.6, edge_image, 0.4, 0)
+        view[:] = edge_image
         return msg
 
     def pre_loop(self, cache):
@@ -109,13 +113,14 @@ class Pix2PixDetExecutor(Pix2PixExecutor):
 
 class Pix2PixDetSiameseExecutor(Pix2PixExecutor):
     _name = "Pix2DetSiamese"
+    _det_weights_path = C.PIX2PIX_DET_WEIGHTS_PATH
+    _sme_weights_path = C.SIAMESE_WEIGHTS_PATH
 
-    def __init__(self, det_weights_path, sme_weights_path, use_gpu):
+    def __init__(self, use_gpu):
         super().__init__(use_gpu)
-        self._det_weights_path = det_weights_path
-        self._sme_weights_path = sme_weights_path
 
-    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
+    def run(self, shared_frames: tuple[np.ndarray, ...], msg: SharedResult, cache: dict) -> SharedResult:
+        frame = shared_frames[0]
         _, det_out = cache['det_infer'](cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         det_out = np.asarray((det_out + 1) / 2.0 * 255, dtype=np.uint8)
         _, sme_out = cache['sme_infer'](det_out)
@@ -129,6 +134,9 @@ class Pix2PixDetSiameseExecutor(Pix2PixExecutor):
 
 class Pix2PixSegDetSiameseExecutor(Pix2PixExecutor):
     _name = "Pix2SegDetSiamese"
+    _seg_weights_path = C.PIX2PIX_SEG_WEIGHTS_PATH
+    _det_weights_path = C.PIX2PIX_DET_WEIGHTS_PATH
+    _sme_weights_path = C.SIAMESE_WEIGHTS_PATH
 
     def __init__(self, seg_weights_path, det_weights_path, sme_weights_path,
                  use_gpu, blend_seg=True, blend_det=False):
@@ -139,7 +147,8 @@ class Pix2PixSegDetSiameseExecutor(Pix2PixExecutor):
         self._blend_seg = blend_seg
         self._blend_det = blend_det
 
-    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
+    def run(self, shared_frames: tuple[np.ndarray, ...], msg: SharedResult, cache: dict) -> SharedResult:
+        frame = shared_frames[0]
         # seg_in shape: (1920, 1080, 3) seg_out shape: (256, 256)
         seg_in, seg_out = cache['seg_infer'](cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         # seg_real shape: (3, 256, 256) seg_fake shape: (256, 256)

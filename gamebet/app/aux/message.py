@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 
+import numpy as np
+
 
 class SharedResult(object):
-    def __init__(self, shmid: str, fwidth: int = 1920, fheight: int = 1080) -> None:
+    def __init__(self, shmid: str, shmsz: int, fshape: tuple[int, int, int]) -> None:
         self._shmid = shmid
+        self._shmsz = shmsz
         self._boxes_xyxy_list: list = []
         self._boxes_conf_list: list = []
         self._boxes_clas_list: list = []
         self._tracker_id_list: list = []
         self._team_color_list: list = []   # C.COLOR_CLUSTER_BOUNDARIES
         self._pitch_feat_list: list = []
+        self._homography_matrix: list  = []
 
-        self._fwidth = fwidth
-        self._fheigth = fheight
+        self._fshape = fshape
+        self._fsize = np.prod(fshape) * np.dtype('uint8').itemsize
         self._token = -1
 
 
@@ -31,8 +35,10 @@ class SharedResult(object):
             outstr += '\n  team_list: %s' % self._team_color_list[:precnt]
         if len(self._pitch_feat_list) > 0:
             outstr += '\n  feat_list: %s' % self._pitch_feat_list
-        outstr = '\n----------[ Cache ID: %s Token: %d Boxes Count: %d Shape: (%d %d) ]----------' % (
-            self._shmid, self.token, boxcnt, self._fwidth, self._fheigth
+        if len(self._homography_matrix) > 0:
+            outstr += '\n  homo_list: %s' % self._homography_matrix
+        outstr = '\n----------[ Cache ID: %s Token: %d Boxes Count: %d Shape: %s ]----------' % (
+            self._shmid, self.token, boxcnt, self._fshape
         ) + outstr
         return outstr
 
@@ -43,6 +49,7 @@ class SharedResult(object):
         self._tracker_id_list.clear()
         self._team_color_list.clear()
         self._pitch_feat_list.clear()
+        self._homography_matrix.clear()
         self._token = token
 
         return self
@@ -56,12 +63,16 @@ class SharedResult(object):
         return self._shmid
 
     @property
-    def frame_width(self):
-        return self._fwidth
+    def shm_size(self):
+        return self._shmsz
 
     @property
-    def frame_height(self):
-        return self._fheigth
+    def frame_shape(self):
+        return self._fshape
+
+    @property
+    def frame_size(self):
+        return self._fsize
 
     @property
     def token(self):
@@ -80,19 +91,19 @@ class SharedResult(object):
         self._boxes_xyxy_list = xyxys
 
     @property
-    def boxes_conf(self):
+    def boxes_confs(self):
         return self._boxes_conf_list
 
-    @boxes_conf.setter
-    def boxes_conf(self, confs):
+    @boxes_confs.setter
+    def boxes_confs(self, confs):
         self._boxes_conf_list = confs
 
     @property
-    def boxes_clas(self):
+    def boxes_clses(self):
         return self._boxes_clas_list
 
-    @boxes_clas.setter
-    def boxes_clas(self, cls):
+    @boxes_clses.setter
+    def boxes_clses(self, cls):
         self._boxes_clas_list = cls
 
     @property
@@ -118,3 +129,11 @@ class SharedResult(object):
     @pitch_feats.setter
     def pitch_feats(self, feats):
         self._pitch_feat_list = feats
+
+    @property
+    def homography_matrix(self):
+        return self._homography_matrix
+
+    @homography_matrix.setter
+    def homography_matrix(self, homo):
+        self._homography_matrix = homo

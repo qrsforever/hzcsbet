@@ -5,4 +5,6 @@
 - https://github.com/ChaosAdmStudent/qualitative-badminton-player-analysis.git
 - https://github.com/FootballAnalysis/footballanalysis.git
 - https://github.com/mikel-brostrom/yolo_tracking
-- git clone https://github.com/NirAharon/BoT-SORT.git
+- https://github.com/NirAharon/BoT-SORT.git
+- https://github.com/ericsujw/KpSFR.git
+- https://github.com/lood339/SCCvSD.git

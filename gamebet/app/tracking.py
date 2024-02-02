@@ -5,6 +5,7 @@
 from aux.executor import ExecutorBase
 from aux.message import SharedResult
 from aux.constant import ByteTrackerArgs
+import aux.constant as C
 
 import numpy as np
 
@@ -12,8 +13,9 @@ import numpy as np
 class TrackExecutor(ExecutorBase):
     _name = 'Tracking'
 
-    def run(self, frame: np.ndarray, msg: SharedResult, cache: dict) -> SharedResult:
-        xyxy_list, conf_list = msg.boxes_xyxy, msg.boxes_conf
+    def run(self, shared_frames: tuple[np.ndarray], msg: SharedResult, cache: dict) -> SharedResult:
+        frame = shared_frames[0]
+        xyxy_list, conf_list = msg.boxes_xyxy, msg.boxes_confs
         state = np.array([[*xyxy, conf] for xyxy, conf in zip(xyxy_list, conf_list)], dtype=float)
         tracks = cache['tracker'].update(output_results=state, img_info=frame.shape, img_size=frame.shape)
         track_list = [track.tlbr for track in tracks]
