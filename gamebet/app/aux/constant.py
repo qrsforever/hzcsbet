@@ -19,6 +19,7 @@ LOGGER_FORMAT = logging.Formatter("%(asctime)s - %(process)s - %(levelname)s: %(
 ## app & shared memory
 
 SHM_CACHE_COUNT = 24
+SHM_FRAME_COUNT = 2
 
 APP_OUTPUT_PATH = os.environ.get('APP_OUTPUT_PATH', 'output')
 
@@ -35,6 +36,7 @@ YOLO_DETECT_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/soccer_yolov8x.pt'
 PIX2PIX_SEG_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/seg_net_G.pth'
 PIX2PIX_DET_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/det_net_G.pth'
 SIAMESE_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/siamese.pth'
+ROUBUST_SFR_WEIGHTS_PATH = f'{CKPTS_ROOT_PATH}/robust_sfr.pth'
 FEATURES_CAMERAS_PARAMS_PATH = f'{CKPTS_ROOT_PATH}/features_cameras_params.mat'
 FEATURES_CAMERAS_HOG_PARAMS_PATH = f'{CKPTS_ROOT_PATH}/features_cameras_hog_params.mat'
 
@@ -92,3 +94,13 @@ class Pix2PixArgs:
 ## camera
 
 WORLDCUP2014_TEMPL_PATH = f'{CKPTS_ROOT_PATH}/worldcup2014.mat'
+
+## BirdsEye
+
+# yard2meter = 0.9144
+# template_h, template_w = int(74 * yard2meter) + 2, int(115 * yard2meter) + 2
+
+TEMPLATE_W, TEMPLATE_H = 115, 74
+RENDER_W, RENDER_H = 1050, 680
+
+BG_BLACK_FIELD_PATH = f'{CKPTS_ROOT_PATH}/field_black.jpg'

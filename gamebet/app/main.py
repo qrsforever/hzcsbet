@@ -19,7 +19,8 @@ from pix2pix import (
     Pix2PixSegDetSiameseExecutor,
 )
 from birdeyeview import (
-    BEVDeepExecutor,
+    BEVRobustSFRExecutor,
+    BEVSiameseExecutor,
     BEVHogExecutor,
 )
 
@@ -43,8 +44,8 @@ def main():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--source', type=str, required=True, help='video file path or image dir path')
-    parser.add_argument('--start', type=int, default=-1, help='start at x seconds if video, count if images')
-    parser.add_argument('--stop', type=int, default=-1, help='stop at x secodns if video, count if images')
+    parser.add_argument('--start', type=float, default=-1, help='start at x seconds if video, count if images')
+    parser.add_argument('--stop', type=float, default=-1, help='stop at x secodns if video, count if images')
     args = parser.parse_args()
 
     logger_queue = mp.Queue()
@@ -64,13 +65,16 @@ def main():
     pix2det = Pix2PixDetExecutor(use_gpu=use_gpu)
     # pix2detsme = Pix2PixDetSiameseExecutor(use_gpu=use_gpu)
     # pix2pix = Pix2PixSegDetSiameseExecutor(use_gpu=use_gpu, blend_seg=True, blend_det=False)
-    birdeye = BEVHogExecutor()
+    # birdeye = BEVHogExecutor()
+    # birdeye = BEVSiameseExecutor(use_gpu=use_gpu)
+    birdeye = BEVRobustSFRExecutor(use_gpu=use_gpu)
     if os.path.isfile(args.source):
         source = VideoExecutor(args.source, args.start, args.stop)
     else:
-        source = ImageExecutor(args.source, args.start, args.stop)
+        source = ImageExecutor(args.source, int(args.start), int(args.stop))
 
-    source.linkto(birdeye).linkto(sinking).linkto(source, False)
+    source.linkto(detector).linkto(tracking).linkto(teamfier).linkto(birdeye).linkto(sinking).linkto(source, False)
+    # source.linkto(birdeye).linkto(sinking).linkto(source, False)
     # source.linkto(pix2seg).linkto(pix2det).linkto(birdeye).linkto(sinking).linkto(source, False)
     # source.linkto(pix2pix).linkto(detector).linkto(tracking).linkto(teamfier).linkto(sinking).linkto(source, False)
     # source.linkto(pix2seg).linkto(pix2detsme).linkto(sinking).linkto(source, False)
@@ -84,3 +88,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# LOG=d python3 main.py --source ../datasets/soccer_data/test/   --stop 10
+# LOG=d python3 main.py --source ../datasets/0bfacc_5.mp4  --start 10  --stop 15

@@ -32,15 +32,16 @@ class SourceExecutor(ExecutorBase):
         if self._frame_scale != 1.0:
             image = cv2.resize(image, (self._frame_width, self._frame_height), interpolation=cv2.INTER_AREA)
 
-        frame = shared_frames[0]
-        frame[:] = image
+        for i in range(C.SHM_FRAME_COUNT):
+            frame = shared_frames[i]
+            frame[:] = image
         cache['current_count'] += 1
         self.logger.debug(f'{cache}')
         return msg.reset(cache['current_count'])
 
     def pre_loop(self, cache):
         shape = (self._frame_height, self._frame_width, 3)
-        size = 2 * np.prod(shape) * np.dtype('uint8').itemsize
+        size = C.SHM_FRAME_COUNT * np.prod(shape) * np.dtype('uint8').itemsize
         for i in range(C.SHM_CACHE_COUNT):
             name = 'cache-%d' % i
             if not os.path.exists(f'/dev/shm/{name}'):
@@ -116,25 +117,23 @@ class ImageExecutor(SourceExecutor):
         self._to_index = to_index
 
     # Only Debug
-    def run(self, shared_frames: tuple[np.ndarray, ...], msg, cache):
-        if msg.token > 0:
-            self.logger.debug(msg)
-        if cache['current_count'] >= cache['frame_stop']:
-            self.logger.info(cache)
-            return None
-        success, image1, image2 = cache['reader'].read2()
-        if not success:
-            return None
-
-        image1 = cv2.resize(image1, (self._frame_width, self._frame_height), interpolation=cv2.INTER_AREA)
-        image2 = cv2.resize(image2, (self._frame_width, self._frame_height), interpolation=cv2.INTER_AREA)
-
-        frame1, frame2 = shared_frames[0], shared_frames[1]
-        frame1[:] = image1
-        frame2[:] = image2
-        cache['current_count'] += 1
-        self.logger.debug(f'{cache}')
-        return msg.reset(cache['current_count'])
+    # def run(self, shared_frames: tuple[np.ndarray, ...], msg, cache):
+    #     if msg.token > 0:
+    #         self.logger.debug(msg)
+    #     if cache['current_count'] >= cache['frame_stop']:
+    #         self.logger.info(cache)
+    #         return None
+    #     success, image1, image2 = cache['reader'].read2()
+    #     if not success:
+    #         return None
+    #     image1 = cv2.resize(image1, (self._frame_width, self._frame_height), interpolation=cv2.INTER_AREA)
+    #     image2 = cv2.resize(image2, (self._frame_width, self._frame_height), interpolation=cv2.INTER_AREA)
+    #     frame1, frame2 = shared_frames[0], shared_frames[1]
+    #     frame1[:] = image1
+    #     frame2[:] = image2
+    #     cache['current_count'] += 1
+    #     self.logger.debug(f'{cache}')
+    #     return msg.reset(cache['current_count'])
 
     def pre_loop(self, cache):# {{{
         if self._source_path is None or not os.path.isdir(self._source_path):
@@ -166,7 +165,8 @@ class ImageExecutor(SourceExecutor):
 
             def read(self):
                 try:
-                    img = cv2.imread(next(self._image_list), cv2.IMREAD_COLOR)
+                    img_path = next(self._image_list)
+                    img = cv2.imread(img_path, cv2.IMREAD_COLOR)
                     return True, img
                 except StopIteration:
                     return False, None

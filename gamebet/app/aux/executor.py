@@ -6,6 +6,7 @@ import abc
 import logging
 import multiprocessing as mp
 import numpy as np
+import aux.constant as C
 
 from multiprocessing.shared_memory import SharedMemory
 from logging.handlers import QueueHandler
@@ -17,9 +18,12 @@ from multiprocessing.resource_tracker import unregister, _CLEANUP_FUNCS  # type:
 def shared_memory_to_numpy(msg):
     try:
         shared_mem = SharedMemory(name=msg.shm_name, create=False)
-        np_array1 = np.ndarray(msg.frame_shape, dtype=np.uint8, buffer=shared_mem.buf[:msg.frame_size])
-        np_array2 = np.ndarray(msg.frame_shape, dtype=np.uint8, buffer=shared_mem.buf[msg.frame_size:2 * msg.frame_size])
-        yield [np_array1, np_array2]
+        shared_frames = []
+        for i in range(C.SHM_FRAME_COUNT):
+            a = i * msg.frame_size
+            b = a + msg.frame_size
+            shared_frames.append(np.ndarray(msg.frame_shape, dtype=np.uint8, buffer=shared_mem.buf[a:b]))
+        yield shared_frames
     finally:
         # TODO: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
         # https://forums.raspberrypi.com/viewtopic.php?t=340441

@@ -12,14 +12,15 @@ class SinkingExecutor(ExecutorBase):
 
 class FileSinkExecutor(ExecutorBase):
 
-    def __init__(self, video_output_path):
+    def __init__(self, video_output_path, fps=25):
         super().__init__()
         self.video_output_path = video_output_path
+        self.fps = fps
 
     def pre_loop(self, cache):
         cache['writer'] = cv2.VideoWriter(
             self.video_output_path, fourcc=cv2.VideoWriter_fourcc(*"mp4v"),  # type: ignore
-            fps=C.FRAME_RATE, frameSize=(C.FRAME_WIDTH, C.FRAME_HEIGHT), isColor=True)
+            fps=self.fps, frameSize=(C.FRAME_WIDTH, C.FRAME_HEIGHT), isColor=True)
 
     def post_loop(self, cache):
         cache['writer'].release()
@@ -44,30 +45,44 @@ class FileSinkExecutor(ExecutorBase):
                     cv2.putText(image, str(trid_list[i]), (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, box_color, 3)
         return image
 
-    def draw_birdeyes_perspective(self, frame, homo, scale=10, bg=0):
-        yard2meter = 0.9144
-        template_h, template_w = int(74 * yard2meter) + 2, int(115 * yard2meter) + 2
+    def draw_birdeyes_perspective(self, frame, msg, bg_img=None):
+        template_w, template_h = C.TEMPLATE_W, C.TEMPLATE_H
+        render_w, render_h = C.RENDER_W, C.RENDER_H
 
-        # template view (0, 0) at top-left, so v-flip transform
-        trans = np.array([
-            [1, 0, 0],
-            [0, -1, template_h],
-            [0, 0, 1],
-        ])
-        if scale > 1:
-            trans = np.array([
-                [scale, 0, 0],
-                [0, scale, 0],
-                [0, 0, 1]
-            ]) @ trans
-        h_cam2templ = np.linalg.inv(np.array(homo))
+        homo = np.array(msg.homography_matrix)
+        if len(homo) == 0:
+            return frame
+
+        scaling_mat = np.eye(3)
+        scaling_mat[0, 0] = render_w / template_w
+        scaling_mat[1, 1] = render_h / template_h
+        homo = scaling_mat @ homo
+
+        def transform_matrix(matrix, p, vid_shape, gt_shape=()):
+            p = (p[0]*C.FRAME_WIDTH/vid_shape[1], p[1]*C.FRAME_HEIGHT/vid_shape[0])
+            px = (matrix[0][0]*p[0] + matrix[0][1]*p[1] + matrix[0][2]) / ((matrix[2][0]*p[0] + matrix[2][1]*p[1] + matrix[2][2]))
+            py = (matrix[1][0]*p[0] + matrix[1][1]*p[1] + matrix[1][2]) / ((matrix[2][0]*p[0] + matrix[2][1]*p[1] + matrix[2][2]))
+            p_after = (int(px*gt_shape[1]/C.RENDER_W) , int(py*gt_shape[0]/C.RENDER_H))
+            return p_after
+
+        xyxy_list, trid_list = msg.boxes_xyxy, msg.tracklet_ids,
+        color_list, clas_list = msg.team_colors, msg.boxes_clses
+        if bg_img is not None and len(xyxy_list) > 0 and len(trid_list) > 0 and len(color_list) > 0:
+            for i in range(len(xyxy_list)):
+                if clas_list[i] != 1: # players  # type: ignore
+                    continue
+                x1, y1, x2, y2 = xyxy_list[i]
+                x_c, y_c = (x1 + x2) / 2, y2
+                color = C.COLOR_CLUSTER_BOUNDARIES[color_list[i]][1]  # type: ignore
+                coords = transform_matrix(homo, (x_c, y_c), frame.shape[:2], bg_img.shape[:2])
+                cv2.circle(bg_img, coords, 12, color, -1)
+                cv2.putText(bg_img, str(trid_list[i]), (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255,), 3)
+
         image = cv2.warpPerspective(
-            frame, trans @ h_cam2templ,
-            (int(scale * template_w), int(scale * template_h)),
-            borderMode=cv2.BORDER_CONSTANT, borderValue=bg)  # pyright: ignore
-        return cv2.resize(image, frame.shape[:2][::-1])
-
-
+            frame, homo, (render_w, render_h),
+            cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=(0,))  # pyright: ignore
+        image = cv2.resize(image, frame.shape[:2][::-1])
+        return image
 
 class DirectSinkExecutor(FileSinkExecutor):
     _name = 'DirectSink'
@@ -111,9 +126,10 @@ class GridSinkExecutor(FileSinkExecutor):
 
     def run(self, shared_frames: tuple[np.ndarray, ...], msg: SharedResult, cache: dict) -> SharedResult:
         frame1, frame2 = shared_frames[0], shared_frames[1]
-        image1 = self.draw_detect_with_tracking(frame1, msg)
-        image2 = self.draw_birdeyes_perspective(frame2, msg.homography_matrix)
-        grid = np.vstack((np.hstack((frame1, image1)), np.hstack((frame2, image2))))
+        image1 = self.draw_detect_with_tracking(frame2, msg)
+        bg_image = cache['bg_img'].copy()
+        image2 = self.draw_birdeyes_perspective(frame1, msg, bg_img=bg_image)
+        grid = np.vstack((np.hstack((frame1, image1)), np.hstack((image2, cache['bg_img']))))
         grid = cv2.resize(grid, frame1.shape[:2][::-1])
         cache['writer'].write(grid)
         return msg
@@ -121,4 +137,9 @@ class GridSinkExecutor(FileSinkExecutor):
     def pre_loop(self, cache):
         cache['writer'] = cv2.VideoWriter(
             self.video_output_path, fourcc=cv2.VideoWriter_fourcc(*"mp4v"),  # type: ignore
-            fps=5, frameSize=(C.FRAME_WIDTH, C.FRAME_HEIGHT), isColor=True)
+            fps=self.fps, frameSize=(C.FRAME_WIDTH, C.FRAME_HEIGHT), isColor=True)
+
+        bg_img = cv2.imread(C.BG_BLACK_FIELD_PATH)
+        bg_img = cv2.resize(bg_img, (C.FRAME_WIDTH, C.FRAME_HEIGHT))
+        cache['bg_img'] = bg_img
+

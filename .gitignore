@@ -7,6 +7,7 @@
 gamebet/datasets/yolov8
 gamebet/datasets/SoccerNet
 gamebet/datasets/soccer_seg_detection
+gamebet/datasets/soccer_data
 .Trash-0
 .flake8
 .venv

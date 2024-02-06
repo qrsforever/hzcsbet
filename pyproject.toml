@@ -2,8 +2,8 @@
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
-venvPath = ".venv"
-venv = "pytorch"
+# venvPath = ".venv"
+# venv = "pytorch"
 include = [
     "gamebet/app",
 ]
@@ -41,6 +41,7 @@ verboseOutput = true
 extraPaths = [
     "./gamebet/thirdparts/ultralytics",
     "./gamebet/thirdparts/ByteTrack",
+    "./gamebet/thirdparts/KpSFR",
 ]
 
 executionEnvironments = [
@@ -55,7 +56,7 @@ executionEnvironments = [
 typeCheckingMode = "basic"
 
 # Determines whether pyright reads, parses and analyzes library code to extract type information in the absence of type stub files.
-useLibraryCodeForTypes = true
+useLibraryCodeForTypes = false
 
 # defines support for "# type: ignore" comments
 enableTypeIgnoreComments=true

@@ -27,12 +27,18 @@ class BEVBaseExecutor(ExecutorBase):
         pose = CameraPose.from_axis_angle(camera_data[3:6], camera_data[6:9])
         camera = PerspectiveCamera(prop, pose)
         homo = camera.get_homography()
-        refined_homo = cache['refine_camera_pose'](camera, view) @ homo
-        msg.homography_matrix = refined_homo.tolist()
-        # warp_out = cache['warp_perspective'](refined_homo, frame)
-        # h, w = warp_out.shape[:2]
-        # frame[:h, :w] = 255
-        # frame[:h, :w] = warp_out
+        # template to camera
+        homo = cache['refine_camera_pose'](camera, view) @ homo
+        # camera to template
+        homo = np.linalg.inv(homo)
+        # template view (0, 0) at top-left, so v-flip transform
+        vflip_mat = np.array([
+            [1, 0, 0],
+            [0, -1, C.TEMPLATE_H],
+            [0, 0, 1],
+        ])
+        homo = homo @ vflip_mat
+        msg.homography_matrix = homo.tolist()
         return msg
 
     def pre_loop(self, cache):
@@ -92,36 +98,13 @@ class BEVBaseExecutor(ExecutorBase):
                 self.logger.error(f'findTransformECC error: {err}')
             return h_retrieved_to_edge
 
-        def warp_perspective(h_templ2cam, img_cam, scale=10, bg=0):
-            yard2meter = 0.9144
-            template_h, template_w = int(74 * yard2meter) + 2, int(115 * yard2meter) + 2
-
-            # template view (0, 0) at top-left, so v-flip transform
-            trans = np.array([
-                [1, 0, 0],
-                [0, -1, template_h],
-                [0, 0, 1],
-            ])
-            if scale > 1:
-                trans = np.array([
-                    [scale, 0, 0],
-                    [0, scale, 0],
-                    [0, 0, 1]
-                ]) @ trans
-            h_cam2templ = np.linalg.inv(h_templ2cam)
-            return cv2.warpPerspective(
-                img_cam, trans @ h_cam2templ,
-                (int(scale * template_w), int(scale * template_h)),
-                borderMode=cv2.BORDER_CONSTANT, borderValue=bg)  # pyright: ignore
-
         cache['find_params'] = find_camera_params
         cache['project_court'] = project_camera_court
         cache['refine_camera_pose'] = refine_camera_pose
-        cache['warp_perspective'] = warp_perspective
 
 
-class BEVDeepExecutor(BEVBaseExecutor):
-    _name = 'BEVDeep'
+class BEVSiameseExecutor(BEVBaseExecutor):
+    _name = 'BEVSiamese'
     _feature_db_path = C.FEATURES_CAMERAS_PARAMS_PATH
     _model_weights_path = C.SIAMESE_WEIGHTS_PATH
 
@@ -130,7 +113,7 @@ class BEVDeepExecutor(BEVBaseExecutor):
         self._use_gpu = use_gpu
 
     def siamese_infer(self, weights_path):
-        from models import siamese
+        from models.siamese import SiameseNetwork
 
         device = torch.device('cuda:0') if self._use_gpu else torch.device('cpu')
 
@@ -140,7 +123,7 @@ class BEVDeepExecutor(BEVBaseExecutor):
             T.Normalize(mean=0.01848, std=0.11606)
         ).to(device)
 
-        netS = siamese.SiameseNetwork()
+        netS = SiameseNetwork()
         netS.load_state_dict(torch.load(weights_path, map_location=device)['model'])
         netS.to(device)
         netS.eval()
@@ -165,6 +148,7 @@ class BEVDeepExecutor(BEVBaseExecutor):
     def pre_loop(self, cache):
         super().pre_loop(cache)
         cache['sme_infer'] = self.siamese_infer(self._model_weights_path)
+
 
 class BEVHogExecutor(BEVBaseExecutor):
     _name = 'BEVHog'
@@ -192,3 +176,88 @@ class BEVHogExecutor(BEVBaseExecutor):
             return feat.tolist()
 
         cache['compute_feature'] = compute_feature
+
+
+class BEVRobustSFRExecutor(ExecutorBase):
+    _name = "BEVSFR"
+    _model_weights_path = C.ROUBUST_SFR_WEIGHTS_PATH
+
+    def __init__(self, use_gpu):
+        super().__init__()
+        self._use_gpu = use_gpu
+
+    def sfr_infer(self, weights_path):
+        from models.robustsfr import EncDec
+
+        device = torch.device('cuda:0') if self._use_gpu else torch.device('cpu')
+
+        # width: 320 height: 180
+        transform = torch.nn.Sequential(
+            T.Resize((720, 1280), T.InterpolationMode.BICUBIC, antialias=False),  # type: ignore
+            T.Normalize([0.485, 0.456, 0.406],
+                        [0.229, 0.224, 0.225])  # ImageNet
+        ).to(device)
+
+        netS = EncDec(18, 92, 1)
+        netS.load_state_dict(torch.load(weights_path, map_location=device)['model_state_dict'])
+        netS.to(device)
+        netS.eval()
+
+        def cal_homography(scores, preds, tmpl_grid, nms_thres=0.995, num_classes=92):
+            src_pts, dst_pts = [], []
+            for cls in range(1, num_classes):
+                pred_inds = preds == cls
+                if not np.any(pred_inds):
+                    continue
+                values = scores[pred_inds]
+                max_score = values.max()
+                max_index = values.argmax()
+
+                indices = np.where(pred_inds)
+                coords = list(zip(indices[0], indices[1]))
+                if max_score >= nms_thres:
+                    x, y = coords[max_index]
+                    src_pts.append((y * 4, x * 4)) # 320, 180 -> 1280, 720
+                    dst_pts.append(tmpl_grid[cls])
+
+            src_pts, dst_pts = np.array(src_pts, dtype=np.float32), np.array(dst_pts, dtype=np.float32)
+            if len(src_pts) > 4:
+                pred_homo, _ = cv2.findHomography(
+                    src_pts.reshape(-1, 1, 2), dst_pts.reshape(-1, 1, 2), cv2.RANSAC, 10)
+            else:
+                pred_homo = np.array([])
+            return pred_homo
+
+        @torch.inference_mode()
+        def model_infer(inputs, tmpl_grid):
+            inputs = F.to_tensor(inputs)
+            inputs = transform(inputs)
+            x = torch.unsqueeze(inputs, dim=0).to(device)
+            x = netS(x)  # [1, 92, 180, 320]
+            x = torch.softmax(x, dim=1)  # [1, 92, 180, 320] （normalize: 0 ~ 1)
+            values, indices = torch.max(x, dim=1)
+            scores, preds = values[0].cpu().numpy(), indices[0].cpu().numpy()
+            homo = cal_homography(scores, preds, tmpl_grid)
+            return homo
+        return model_infer
+
+    def pre_loop(self, cache):
+        def gen_template_grid():
+            field_dim_x, field_dim_y = 114.83, 74.37  # in yard
+            nx, ny = (13, 7)  # 91
+            x = np.linspace(0, field_dim_x, nx)
+            y = np.linspace(0, field_dim_y, ny)
+            xv, yv = np.meshgrid(x, y, indexing='ij')
+            uniform_grid = np.stack((xv, yv), axis=2).reshape(-1, 2)
+            template_cls_dict = {}
+            for idx, pts in enumerate(uniform_grid):
+                template_cls_dict[idx + 1] = pts
+            return template_cls_dict
+
+        cache['tmpl_grid'] = gen_template_grid()
+        cache['sfr_infer'] = self.sfr_infer(self._model_weights_path)
+
+    def run(self, shared_frames: tuple[np.ndarray, ...], msg: SharedResult, cache: dict) -> SharedResult:
+        homo = cache['sfr_infer'](shared_frames[0], cache['tmpl_grid'])
+        msg.homography_matrix = homo.tolist()
+        return msg
