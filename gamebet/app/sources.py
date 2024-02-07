@@ -24,7 +24,7 @@ class SourceExecutor(ExecutorBase):
         if msg.token > 0:
             self.logger.debug(msg)
         if cache['current_count'] >= cache['frame_stop']:
-            self.logger.info(cache)
+            self.logger.debug(f'frame {msg.token}/{cache["frame_stop"]} finished.')
             return None
         success, image = cache['reader'].read()
         if not success:
@@ -36,7 +36,7 @@ class SourceExecutor(ExecutorBase):
             frame = shared_frames[i]
             frame[:] = image
         cache['current_count'] += 1
-        self.logger.debug(f'{cache}')
+        self.logger.debug(f'frame {cache["current_count"]}/{cache["frame_stop"]} finished.')
         return msg.reset(cache['current_count'])
 
     def pre_loop(self, cache):
@@ -93,10 +93,10 @@ class VideoExecutor(SourceExecutor):
             self.logger.warn(f'({self._frame_width}, {self._frame_height}) vs ({frame_width}, {frame_height})')
 
         cache['frame_count'] = frame_count
-        cache['frame_rate'] = frame_rate
-        cache['frame_from'] = frame_from
-        cache['frame_stop'] = frame_stop
-        cache['current_count'] = frame_from
+        cache['frame_rate'] = int(frame_rate)
+        cache['frame_from'] = int(frame_from)
+        cache['frame_stop'] = int(frame_stop)
+        cache['current_count'] = int(frame_from)
         cache['reader'] = cap
         super().pre_loop(cache)
         self.logger.info(f'pre cache: {cache}')# }}}

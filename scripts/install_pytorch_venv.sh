@@ -7,4 +7,4 @@ pip3 install opencv-python-headless opencv-contrib-python seaborn pandas h5py sc
 ## ray
 # pip3 install aiohttp opencensus aiohttp_cors pandas==2.1.4 fastapi grpcio ray pyarrow
 ##  bytetrack
-pip3 install loguru thop lap tqdm cython_bbox
+pip3 install loguru thop lap tqdm cython_bbox py-cpuinfo

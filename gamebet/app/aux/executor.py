@@ -107,7 +107,8 @@ class ExecutorBase(abc.ABC):
                             self.logger.debug(f'{self._name} timeit: {time.time() - t0}')
                             out_queue.put(out)
                         except Exception as err:
-                            self.logger.error(f'{err}')
+                            import traceback
+                            self.logger.error(f'{self._name}: {err} {traceback.format_exc(5)}')
                             out_queue.put(None)
                             break
             self.logger.info(f'{self._name} quit loop!')
